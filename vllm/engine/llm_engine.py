@@ -31,7 +31,7 @@ from vllm.inputs import (INPUT_REGISTRY, EncoderDecoderLLMInputs,
                          InputRegistry, LLMInputs, PromptInputs,
                          SingletonPromptInputs)
 from vllm.inputs.parse import is_explicit_encoder_decoder_prompt
-from vllm.logger import init_logger
+from vllm.logger import init_logger, print_logger
 from vllm.lora.request import LoRARequest
 from vllm.multimodal import MultiModalDataDict
 from vllm.outputs import (EmbeddingRequestOutput, RequestOutput,
@@ -480,6 +480,9 @@ class LLMEngine:
                 assert distributed_executor_backend is None
                 from vllm.executor.tpu_executor import TPUExecutor
                 executor_class = TPUExecutor
+        elif engine_config.device_config.device_type == "fpga":
+            from vllm.executor.lpu_executor import LPUExecutor
+            executor_class = LPUExecutor
         elif engine_config.device_config.device_type == "cpu":
             from vllm.executor.cpu_executor import CPUExecutor
             executor_class = CPUExecutor
@@ -1576,6 +1579,7 @@ class LLMEngine:
             # the RPC thread in the workers so that they can process any other
             # queued control plane messages, such as add/remove lora adapters.
             self.model_executor.stop_remote_worker_execution_loop()
+            self.model_executor.cleanup()
 
         return ctx.request_outputs
 

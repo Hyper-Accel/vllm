@@ -43,7 +43,6 @@ DEFAULT_LOGGING_CONFIG = {
         },
     },
     "version": 1,
-    "disable_existing_loggers": False
 }
 
 
@@ -77,6 +76,20 @@ def _configure_vllm_root_logger() -> None:
     if logging_config:
         dictConfig(logging_config)
 
+import inspect
+
+# 1 means question(red), 2 means highlight stamp(green), 3 means normal stamp(yellow)
+def print_logger(arg, level=3):
+      frame = inspect.currentframe().f_back
+      filename = frame.f_code.co_filename
+      line_number = frame.f_lineno
+      function_name = frame.f_code.co_name
+      if level == 1:
+        print(f"\033[91m[HJ QUESTION]\033[0m File: {filename}, Line: {line_number}, Function: {function_name}, Argument: {arg}")
+      elif level == 2:
+        print(f"\033[92m[HJ HIGHLIGHT]\033[0m File: {filename}, Line: {line_number}, Function: {function_name}, Argument: {arg}")
+      else:
+        print(f"\033[93m[HJ LOGGER]\033[0m File: {filename}, Line: {line_number}, Function: {function_name}, Argument: {arg}")
 
 def init_logger(name: str) -> Logger:
     """The main purpose of this function is to ensure that loggers are
