@@ -4,15 +4,15 @@ current_platform: Platform
 
 # NOTE: we don't use `torch.version.cuda` / `torch.version.hip` because
 # they only indicate the build configuration, not the runtime environment.
-# For example, people can install a cuda build of pytorch but run on tpu.
+# For example, people can install a cuda build of pytorch but run on lpu.
 
-is_tpu = False
+is_lpu = False
 try:
-    # While it's technically possible to install libtpu on a non-TPU machine,
-    # this is a very uncommon scenario. Therefore, we assume that libtpu is
-    # installed if and only if the machine has TPUs.
-    import libtpu  # noqa: F401
-    is_tpu = True
+    # While it's technically possible to install liblpu on a non-LPU machine,
+    # this is a very uncommon scenario. Therefore, we assume that liblpu is
+    # installed if and only if the machine has LPUs.
+    import liblpu  # noqa: F401
+    is_lpu = True
 except Exception:
     pass
 
@@ -42,14 +42,14 @@ try:
 except Exception:
     pass
 
-if is_tpu:
-    # people might install pytorch built with cuda but run on tpu
-    # so we need to check tpu first
-    from .tpu import TpuPlatform
-    current_platform = TpuPlatform()
-elif is_cuda:
+if is_cuda:
     from .cuda import CudaPlatform
     current_platform = CudaPlatform()
+elif is_lpu:
+    # people might install pytorch built with cuda but run on lpu
+    # so we need to check lpu first
+    from .lpu import LpuPlatform
+    current_platform = LpuPlatform()
 elif is_rocm:
     from .rocm import RocmPlatform
     current_platform = RocmPlatform()

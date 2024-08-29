@@ -32,7 +32,7 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         device_config: DeviceConfig,
         cache_config: CacheConfig,
         load_config: LoadConfig,
-#        multimodal_config: Optional[MultiModalConfig],
+        #multimodal_config: Optional[MultiModalConfig],
         local_rank: int,
         rank: int,
         distributed_init_method: str,
@@ -45,12 +45,11 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         self.device_config = device_config
         self.cache_config = cache_config
         self.load_config = load_config
-#        self.multimodal_config = multimodal_config
+        #self.multimodal_config = multimodal_config
         self.local_rank = local_rank
         self.rank = rank
         self.distributed_init_method = distributed_init_method
         self.is_driver_worker = is_driver_worker
-        print_logger(self.model_config.model)
         assert self.device_config.device_type == "fpga"
         if self.cache_config.cache_dtype == "auto":
             self.cache_dtype = self.model_config.dtype
@@ -65,7 +64,7 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
             device_config,
             cache_config,
             load_config,
-#            multimodal_config,
+            #multimodal_config,
             is_driver_worker=is_driver_worker)
     
     def cleanup(self):
@@ -74,16 +73,7 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
     def init_device(self) -> None:
         self.device = torch.device("fpga")
         self.device_config.device = self.device
-        #self.device = torch.device(f"cuda:{self.local_rank}")
 
-#         os.environ["PJRT_DEVICE"] = "LPU"
-#         torch.set_grad_enabled(False)
-#         torch.set_default_dtype(self.model_config.dtype)
-# 
-#         # NOTE(woosuk): This is just to initialize the TP group and broadcast
-#         # the input objects on CPU. The all-reduce and all-gather ops on LPU
-#         # are invoked by `xm.all_reduce` and `xm.all_gather` which use their
-#         # own context.
         init_distributed_environment(
             world_size=self.parallel_config.world_size,
             rank=self.rank,
@@ -95,138 +85,43 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
             self.parallel_config.tensor_parallel_size,
             self.parallel_config.pipeline_parallel_size)
  
-#         # Device initialization should happen after initializing the distributed
-#         # runtime.
-#         self.device = xm.xla_device()
-#         self.device_config.device = self.device
-# 
 #         # Set random seed.
         set_random_seed(self.model_config.seed)
-#         xm.set_rng_state(self.model_config.seed, self.device)
-# 
-#         # Increase the cache size limit, which is the maximum number of
-#         # dynamo graphs that can be compiled.
-#         # NOTE(woosuk): Usually, we compile 10-15 graphs for prefill and
-#         # 30-40 graphs for decode. 128 is an arbitrary safe number.
-#         torch._dynamo.config.cache_size_limit = 128
-#         # Use persistent cache to avoid XLA recompilation.
-#         # NOTE(woosuk): This does not completely eliminate the recompilation
-#         # overhead because dynamo does not cache the compiled results.
-#         # NOTE(woosuk): Set readonly=False only for the rank 0 process to avoid
-#         # race conditions.
-#         xr.initialize_cache(envs.VLLM_XLA_CACHE_PATH,
-#                             readonly=not self.is_driver_worker)
 
     def load_model(self):
         self.model_runner.load_model()
 
+    # LPU does not support this function
     def determine_num_available_blocks(self) -> Tuple[int, int]:
-        print_logger("num_block")
-#        num_layers = self.model_config.get_num_layers(self.parallel_config)
-#        head_size = self.model_config.get_head_size()
-#        num_kv_heads = self.model_config.get_num_kv_heads(self.parallel_config)
-#
-#        kv_caches = [(None, None) for _ in range(num_layers)]
-#        self.model_runner._dummy_run(
-#            batch_size=1,
-#            seq_len=self.scheduler_config.max_num_batched_tokens,
-#            kv_caches=kv_caches,
-#            is_prompt=True,
-#        )
-#        # Synchronize before measuring the memory usage.
-#        xm.wait_device_ops()
-#
-#        dtype_btyes = get_dtype_size(self.cache_dtype)
-#        block_size = self.cache_config.block_size
-#        block_size_bytes = (dtype_btyes * block_size * num_layers * 2 *
-#                            head_size * num_kv_heads)
-#
-#        # Calculate the LPU KV cache size based on profiling.
-#        m = xm.get_memory_info(self.device)
-#        total_memory_size = m["bytes_limit"]
-#        usable_memory_size = int(total_memory_size *
-#                                 self.cache_config.gpu_memory_utilization)
-#        profiled = m["bytes_used"]  # Weights + intermediate activations.
-#        lpu_kv_cache_bytes = max(usable_memory_size - profiled, 0)
-#        num_lpu_blocks = lpu_kv_cache_bytes // block_size_bytes
-#        num_lpu_blocks = (num_lpu_blocks // 8) * 8  # Round down to 8.
-#
-#        # Calculate the CPU KV cache size based on the config.
-#        num_cpu_blocks = int(self.cache_config.swap_space_bytes //
-#                             block_size_bytes)
-#        num_cpu_blocks = (num_cpu_blocks // 8) * 8  # Round down to 8.
-        return 1, 0
+        return 1, 0 
 
+    # LPU does not support this function
     def initialize_cache(
         self,
         num_gpu_blocks: int,
         num_cpu_blocks: int,
     ) -> None:
-        print_logger("INIT_CACHE")
-#        self.cache_config.num_gpu_blocks = num_gpu_blocks
-#        self.cache_config.num_cpu_blocks = num_cpu_blocks
-#        self.block_size = self.cache_config.block_size
-#
-#        dtype = self.cache_dtype
-#        num_layers = self.model_config.get_num_layers(self.parallel_config)
-#        num_kv_heads = self.model_config.get_num_kv_heads(self.parallel_config)
-#        head_size = self.model_config.get_head_size()
-#
-#        self.cpu_cache: List[Tuple[torch.Tensor, torch.Tensor]] = []
-#        self.lpu_cache: List[Tuple[torch.Tensor, torch.Tensor]] = []
-#        lpu_cache_shape = self.model_runner.attn_backend.get_kv_cache_shape(
-#            num_gpu_blocks, self.block_size, num_kv_heads, head_size)
-#        cpu_cache_shape = self.model_runner.attn_backend.get_kv_cache_shape(
-#            num_cpu_blocks, self.block_size, num_kv_heads, head_size)
-#        for _ in range(num_layers):
-#            lpu_k_cache = torch.zeros(lpu_cache_shape,
-#                                      dtype=dtype,
-#                                      device=self.device)
-#            lpu_v_cache = torch.zeros_like(lpu_k_cache)
-#            self.lpu_cache.append((lpu_k_cache, lpu_v_cache))
-#            cpu_k_cache = torch.zeros(cpu_cache_shape,
-#                                      dtype=dtype,
-#                                      device="cpu")
-#            cpu_v_cache = torch.zeros_like(cpu_k_cache)
-#            self.cpu_cache.append((cpu_k_cache, cpu_v_cache))
-#        self._warmup_model()
+        pass 
 
+    # LPU does not support this function
     def _warmup_model(self) -> None:
-        print_logger("warm")
-        # FIXME(woosuk): Here we are abusing `enforce_eager` which is defined
-        # for CUDA graphs. We should refactor this part.
-#        if not self.model_config.enforce_eager:
-            # Warm up the model with all possible input shapes so that
-            # compilation never happens during the actual execution.
-            # This may take ~30 mins for the first run and ~20 mins for the
-            # subsequent runs.
-            # If `enforce_eager` is True, the ahead-of-time compilation is
-            # skipped and the compilation happens during the actual execution,
-            # which is bad for performance but useful for development.
-#            self.model_runner.warmup_model(self.lpu_cache)
+        pass 
 
+    # LPU does not support this function
     def get_cache_block_size_bytes(self) -> int:
-        print_logger("cache_size")
-#        head_size = self.model_config.get_head_size()
-#        num_heads = self.model_config.get_num_kv_heads(self.parallel_config)
-#        num_layers = self.model_config.get_num_layers(self.parallel_config)
-#
-#        key_cache_block = self.cache_config.block_size * num_heads * head_size
-#        value_cache_block = key_cache_block
-#        total = num_layers * (key_cache_block + value_cache_block)
-#        dtype_size = get_dtype_size(self.cache_dtype)
+        pass 
         return 1024
 
     @property
     def do_metadata_broadcast(self) -> bool:
         return self.parallel_config.tensor_parallel_size > 1
 
+    # LPU does not support this function
     @property
     def kv_cache(self) -> Optional[List[List[torch.Tensor]]]:
-        # NOTE(woosuk): This assumes virtual_engine == 0, i.e., no pipeline
-        # parallelism.
-        return None #[self.lpu_cache]
+        return None 
 
+    # LPU does not support this function
     def prepare_worker_input(
         self,
         execute_model_req: ExecuteModelRequest,
@@ -248,40 +143,9 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
             virtual_engine=virtual_engine,
         )
 
+    # LPU does not support this function
     def execute_worker(self, worker_input: WorkerInput) -> None:
-        print_logger(worker_input)
-#        virtual_engine = worker_input.virtual_engine
-#        assert virtual_engine == 0
-#        attn_backend = self.model_runner.attn_backend
-#        num_layers = self.model_config.get_num_layers(self.parallel_config)
-#
-#        # Issue cache operations.
-#        if worker_input.blocks_to_swap_in is not None:
-#            src_indices, dst_indices = worker_input.blocks_to_swap_in
-#            if src_indices.numel() > 0:
-#                # Swap from CPU to LPU.
-#                for i in range(num_layers):
-#                    lpu_k_cache, lpu_v_cache = self.lpu_cache[i]
-#                    cpu_k_cache, cpu_v_cache = self.cpu_cache[i]
-#                    k = cpu_k_cache[:, src_indices].to(self.device)
-#                    v = cpu_v_cache[:, src_indices].to(self.device)
-#                    _insert_kv(k, v, dst_indices, lpu_k_cache, lpu_v_cache)
-#
-#        if worker_input.blocks_to_swap_out is not None:
-#            src_indices, dst_indices = worker_input.blocks_to_swap_out
-#            if src_indices.numel() > 0:
-#                # Swap from LPU to CPU.
-#                for i in range(num_layers):
-#                    lpu_k_cache, lpu_v_cache = self.lpu_cache[i]
-#                    cpu_k_cache, cpu_v_cache = self.cpu_cache[i]
-#                    cpu_k_cache[:, dst_indices] = lpu_k_cache[:, src_indices]
-#                    cpu_v_cache[:, dst_indices] = lpu_v_cache[:, src_indices]
-#
-#        if worker_input.blocks_to_copy is not None:
-#            src_indices, dst_indices = worker_input.blocks_to_copy
-#            if src_indices.numel() > 0:
-#                attn_backend.copy_blocks(self.lpu_cache,
-#                                         (src_indices, dst_indices))
+      pass
 
 
 def _make_src_to_dst(

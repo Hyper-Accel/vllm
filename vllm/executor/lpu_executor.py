@@ -52,7 +52,7 @@ class LPUExecutor(ExecutorBase):
             local_rank=local_rank,
             rank=rank,
             distributed_init_method=distributed_init_method,
-            #multimodal_config=self.multimodal_config, #VERSION
+#            multimodal_config=self.multimodal_config,
             is_driver_worker=rank == 0,
         )
 
@@ -68,7 +68,7 @@ class LPUExecutor(ExecutorBase):
                                                      distributed_init_method))
         return worker
 
-    def initialize_cache( #HJ: we are not use cache
+    def initialize_cache( 
         self,
         num_gpu_blocks: int,
         num_cpu_blocks: int,

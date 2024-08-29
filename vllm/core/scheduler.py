@@ -577,7 +577,7 @@ class Scheduler:
                 self.output_proc_callback()
                 self.running = tmp
 
-            while not self._can_append_slots(seq_group):
+            while not True: #self._can_append_slots(seq_group): TODO
                 budget.subtract_num_batched_tokens(seq_group.request_id,
                                                    num_running_tokens)
                 num_running_seqs = seq_group.get_max_num_running_seqs()
@@ -608,20 +608,20 @@ class Scheduler:
                         swapped_out.append(seq_group)
                     break
             else:
-                self._append_slots(seq_group, blocks_to_copy)
-                is_prefill = seq_group.is_prefill()
+                #self._append_slots(seq_group, blocks_to_copy)
+                #is_prefill = seq_group.is_prefill()
 
                 scheduled_seq_group: ScheduledSequenceGroup = \
                     self._scheduled_seq_group_cache[self.cache_id].get_object()
                 scheduled_seq_group.seq_group = seq_group
-                if is_prefill:
-                    scheduled_seq_group.token_chunk_size = num_running_tokens
-                    prefill_seq_groups.append(scheduled_seq_group)
-                    ret.prefill_seq_groups_list.append(seq_group)
-                else:
-                    scheduled_seq_group.token_chunk_size = 1
-                    decode_seq_groups.append(scheduled_seq_group)
-                    ret.decode_seq_groups_list.append(seq_group)
+                #if is_prefill:
+                #    scheduled_seq_group.token_chunk_size = num_running_tokens
+                #    prefill_seq_groups.append(scheduled_seq_group)
+                #    ret.prefill_seq_groups_list.append(seq_group)
+                #else:
+                scheduled_seq_group.token_chunk_size = 1
+                decode_seq_groups.append(scheduled_seq_group)
+                ret.decode_seq_groups_list.append(seq_group)
 
                 budget.add_num_batched_tokens(seq_group.request_id,
                                               num_running_tokens)
