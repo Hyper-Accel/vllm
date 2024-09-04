@@ -73,7 +73,7 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
     def init_device(self) -> None:
         self.device = torch.device("fpga")
         self.device_config.device = self.device
-
+        print_logger("Hello")
         init_distributed_environment(
             world_size=self.parallel_config.world_size,
             rank=self.rank,
@@ -81,9 +81,11 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
             distributed_init_method=self.distributed_init_method,
             backend="gloo",
         )
+        print_logger("Hello")
         ensure_model_parallel_initialized(
             self.parallel_config.tensor_parallel_size,
             self.parallel_config.pipeline_parallel_size)
+        print_logger("Hello")
  
 #         # Set random seed.
         set_random_seed(self.model_config.seed)

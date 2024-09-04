@@ -2,6 +2,8 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 import torch
 
+from abc import abstractmethod
+
 from vllm.executor.executor_base import ExecutorAsyncBase, ExecutorBase
 from vllm.logger import init_logger, print_logger
 from vllm.lora.request import LoRARequest
@@ -28,6 +30,7 @@ class LPUExecutor(ExecutorBase):
             self.model_config.dtype = torch.bfloat16
 
         # Instantiate the worker and load the model to the device.
+        #print_logger(self.parallel_config.tensor_parallel_size)
         self.driver_worker = self._create_worker()
         self.driver_worker.init_device()
         self.driver_worker.load_model()
@@ -138,8 +141,17 @@ class LPUExecutorAsync(LPUExecutor, ExecutorAsyncBase):
 
     async def execute_model_async(
         self,
-        sexecute_model_req: ExecuteModelRequest,
+        execute_model_req: ExecuteModelRequest,
     ) -> SamplerOutput:
         output = await make_async(self.driver_worker.execute_model
-                                  )(sexecute_model_req)
+                                  )(execute_model_req)
         return output
+
+    async def stop_remote_worker_execution_loop_async(self) -> None:
+        """Releases parallel workers from model loop."""
+        return
+
+    async def check_health_async(self) -> None:
+        """Checks if the executor is healthy. If not, it should raise an
+        exception."""
+        self.check_health()

@@ -20,7 +20,7 @@ from vllm.executor.ray_utils import initialize_ray_cluster, ray
 from vllm.inputs import (EncoderDecoderLLMInputs, LLMInputs, PromptInputs,
                          SingletonPromptInputs)
 from vllm.inputs.parse import is_explicit_encoder_decoder_prompt
-from vllm.logger import init_logger
+from vllm.logger import init_logger, print_logger
 from vllm.lora.request import LoRARequest
 from vllm.outputs import EmbeddingRequestOutput, RequestOutput
 from vllm.pooling_params import PoolingParams
@@ -657,6 +657,9 @@ class AsyncLLMEngine:
         elif engine_config.device_config.device_type == "neuron":
             from vllm.executor.neuron_executor import NeuronExecutorAsync
             executor_class = NeuronExecutorAsync
+        elif engine_config.device_config.device_type == "fpga":
+            from vllm.executor.lpu_executor import LPUExecutorAsync
+            executor_class = LPUExecutorAsync
         elif engine_config.device_config.device_type == "tpu":
             if distributed_executor_backend == "ray":
                 initialize_ray_cluster(engine_config.parallel_config)

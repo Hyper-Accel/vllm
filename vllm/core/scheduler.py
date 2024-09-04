@@ -9,7 +9,7 @@ from typing import (Callable, Deque, Dict, Iterable, List, Optional, Set,
 
 from vllm.config import CacheConfig, LoRAConfig, SchedulerConfig
 from vllm.core.interfaces import AllocStatus, BlockSpaceManager
-from vllm.logger import init_logger
+from vllm.logger import init_logger, print_logger
 from vllm.lora.request import LoRARequest
 from vllm.prompt_adapter.request import PromptAdapterRequest
 from vllm.sequence import (Sequence, SequenceData, SequenceGroup,
@@ -577,7 +577,7 @@ class Scheduler:
                 self.output_proc_callback()
                 self.running = tmp
 
-            while not True: #self._can_append_slots(seq_group): TODO
+            while not True: #TODO #self._can_append_slots(seq_group):
                 budget.subtract_num_batched_tokens(seq_group.request_id,
                                                    num_running_tokens)
                 num_running_seqs = seq_group.get_max_num_running_seqs()
@@ -609,19 +609,19 @@ class Scheduler:
                     break
             else:
                 #self._append_slots(seq_group, blocks_to_copy)
-                #is_prefill = seq_group.is_prefill()
-
+                is_prefill = seq_group.is_prefill()
+                print_logger(is_prefill)
                 scheduled_seq_group: ScheduledSequenceGroup = \
                     self._scheduled_seq_group_cache[self.cache_id].get_object()
                 scheduled_seq_group.seq_group = seq_group
-                #if is_prefill:
-                #    scheduled_seq_group.token_chunk_size = num_running_tokens
-                #    prefill_seq_groups.append(scheduled_seq_group)
-                #    ret.prefill_seq_groups_list.append(seq_group)
-                #else:
-                scheduled_seq_group.token_chunk_size = 1
-                decode_seq_groups.append(scheduled_seq_group)
-                ret.decode_seq_groups_list.append(seq_group)
+                if is_prefill:
+                    scheduled_seq_group.token_chunk_size = num_running_tokens
+                    prefill_seq_groups.append(scheduled_seq_group)
+                    ret.prefill_seq_groups_list.append(seq_group)
+                else:
+                    scheduled_seq_group.token_chunk_size = 1
+                    decode_seq_groups.append(scheduled_seq_group)
+                    ret.decode_seq_groups_list.append(seq_group)
 
                 budget.add_num_batched_tokens(seq_group.request_id,
                                               num_running_tokens)

@@ -135,8 +135,11 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
 
     def load_model(self) -> None:
         hyperdex_ckpt = "/opt/hyperdex/models/" + self.model_config.model
+        print_logger(self.parallel_config.tensor_parallel_size)
+        num_device = self.parallel_config.tensor_parallel_size
+        print_logger(self.model_config.model)
         #NOTE(hyunjun): device number shoud be argumentize
-        self.model = AutoModelForCausalLM.from_pretrained(hyperdex_ckpt, device_map={"gpu": 0, "lpu": 1})
+        self.model = AutoModelForCausalLM.from_pretrained(hyperdex_ckpt, device_map={"gpu": 0, "lpu": 1}) #num_device})
         self.tokenizer = AutoTokenizer.from_pretrained(hyperdex_ckpt)
         self.streamer = TextStreamer(self.tokenizer, use_print=False, use_sse=True, skip_special_tokens=True)
 
@@ -200,7 +203,7 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
         for seq_group_metadata in seq_group_metadata_list:
             #assert not seq_group_metadata.is_prompt
             seq_ids = list(seq_group_metadata.seq_data.keys())
-            print_logger(seq_group_metadata.seq_data[0])
+            #print_logger(seq_group_metadata.seq_data[0])
             print_logger(seq_ids)
             for seq_id in seq_ids:
                 seq_data = seq_group_metadata.seq_data[seq_id]
@@ -359,6 +362,7 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
     #            model_input.t, model_input.p, model_input.num_samples,
     #            kv_caches)
             print_logger(model_input.token_ids)
+            print_logger(model_input.max_tokens)
             if self.model_execution == False:
               import time
               t1 = time.time()
@@ -367,6 +371,7 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
               #print_logger(model_input.repetition_penalty)
               print_logger(model_input.token_ids)
               for i in range(len(model_input.token_ids)):
+               print(model_input.max_tokens[i], model_input.p[i], model_input.k[i], model_input.t[i], model_input.r[i])
                output_token_ids = self.model.generate(
                 model_input.token_ids[i].tolist(),
                 max_new_tokens=model_input.max_tokens[i],
@@ -374,23 +379,34 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
                 top_p=model_input.p[i],
                 top_k=model_input.k[i],
                 temperature=model_input.t[i],
+                #repetition_penalty=model_input.r[i]
                 )
+               self.output_token_ids_buffer = output_token_ids[len(model_input.token_ids[i]):] 
+              #TODO: should be modified to support batch 
               t2 = time.time()
               #self.cleanup() #TODO: it should exist in llm_engine
               print("Core Computation Latency : ", str(t2-t1))
               self.model_execution = True
-              self.output_token_ids_buffer = output_token_ids[len(model_input.token_ids):]
-              print_logger(self.model_execution,3)
-              print_logger(self.output_token_ids_buffer)
+              from transformers import AutoTokenizer
+              tokenizer = AutoTokenizer.from_pretrained("facebook/opt-1.3b", use_fast=False)
+              tmp_output = tokenizer.decode(self.output_token_ids_buffer)
+              print_logger(tmp_output)
+            
             #output_token_ids = output_token_ids[len(model_input.token_ids):]
             #print_logger(output_token_ids) 
-            #from transformers import AutoTokenizer
-            #tokenizer = AutoTokenizer.from_pretrained("facebook/opt-1.3b", use_fast=False)
-            #tmp_output = tokenizer.decode(output_token_ids)
-            #print_logger(tmp_output)
             # Retrieve the outputs to CPU.
             next_token_id = self.output_token_ids_buffer[self.iteration] #.cpu().tolist()
             self.iteration = self.iteration + 1
+            print_logger(self.iteration)
+            print_logger(model_input.max_tokens[0])
+            print_logger(type(model_input.max_tokens[0]))
+            print_logger(len(self.output_token_ids_buffer))
+            print_logger(type(len(self.output_token_ids_buffer)))
+            print_logger(len(self.output_token_ids_buffer) == self.iteration) # Add Stop Token Position
+            if len(self.output_token_ids_buffer) == self.iteration:
+              print_logger("After")
+              self.model_execution = False
+              self.iteration = 0
    
             # NOTE(woosuk): Minimal code to construct the sampler outputs.
             # The LPU backend does not reuse the sampler, since the LPU backend

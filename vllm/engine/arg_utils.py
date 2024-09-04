@@ -545,7 +545,7 @@ class EngineArgs:
                             default=EngineArgs.device,
                             choices=[
                                 "auto", "cuda", "neuron", "cpu", "openvino",
-                                "tpu", "xpu"
+                                "tpu", "xpu", "fpga"
                             ],
                             help='Device type for vLLM execution.')
         parser.add_argument('--num-scheduler-steps',
