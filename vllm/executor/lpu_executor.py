@@ -30,10 +30,13 @@ class LPUExecutor(ExecutorBase):
             self.model_config.dtype = torch.bfloat16
 
         # Instantiate the worker and load the model to the device.
-        #print_logger(self.parallel_config.tensor_parallel_size)
+        #vLLM does not use torch distributed library to execute multi-LPU
+        self.num_device = self.parallel_config.tensor_parallel_size
+        if self.parallel_config.tensor_parallel_size > 1:
+            self.parallel_config.tensor_parallel_size = 1
         self.driver_worker = self._create_worker()
         self.driver_worker.init_device()
-        self.driver_worker.load_model()
+        self.driver_worker.load_model(self.num_device)
 
     def _get_worker_kwargs(
         self,
@@ -97,7 +100,6 @@ class LPUExecutor(ExecutorBase):
         execute_model_req: ExecuteModelRequest,
     ) -> List[SamplerOutput]:
         output = self.driver_worker.execute_model(execute_model_req)
-        print_logger(output)
         return output
 
     def add_lora(self, lora_request: LoRARequest) -> bool:

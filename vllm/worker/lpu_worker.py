@@ -73,7 +73,8 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
     def init_device(self) -> None:
         self.device = torch.device("fpga")
         self.device_config.device = self.device
-        print_logger("Hello")
+        #vLLM does not use torch distributed library to execute multi-LPU
+        self.parallel_config.world_size = 1
         init_distributed_environment(
             world_size=self.parallel_config.world_size,
             rank=self.rank,
@@ -81,17 +82,15 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
             distributed_init_method=self.distributed_init_method,
             backend="gloo",
         )
-        print_logger("Hello")
         ensure_model_parallel_initialized(
             self.parallel_config.tensor_parallel_size,
             self.parallel_config.pipeline_parallel_size)
-        print_logger("Hello")
  
 #         # Set random seed.
         set_random_seed(self.model_config.seed)
 
-    def load_model(self):
-        self.model_runner.load_model()
+    def load_model(self, num_device):
+        self.model_runner.load_model(num_device)
 
     # LPU does not support this function
     def determine_num_available_blocks(self) -> Tuple[int, int]:
@@ -128,7 +127,6 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         self,
         execute_model_req: ExecuteModelRequest,
     ) -> WorkerInput:
-        print_logger(execute_model_req)
         virtual_engine = execute_model_req.virtual_engine
         num_seq_groups = len(execute_model_req.seq_group_metadata_list)
         blocks_to_swap_in = _make_src_to_dst(

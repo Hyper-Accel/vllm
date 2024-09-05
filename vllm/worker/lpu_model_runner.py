@@ -133,13 +133,14 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
         self.iteration = 0
 
 
-    def load_model(self) -> None:
+    def load_model(self, num_device = 1) -> None:
         hyperdex_ckpt = "/opt/hyperdex/models/" + self.model_config.model
         print_logger(self.parallel_config.tensor_parallel_size)
-        num_device = self.parallel_config.tensor_parallel_size
+        print_logger(num_device)
+        #num_device = self.parallel_config.tensor_parallel_size
         print_logger(self.model_config.model)
         #NOTE(hyunjun): device number shoud be argumentize
-        self.model = AutoModelForCausalLM.from_pretrained(hyperdex_ckpt, device_map={"gpu": 0, "lpu": 1}) #num_device})
+        self.model = AutoModelForCausalLM.from_pretrained(hyperdex_ckpt, device_map={"gpu": 0, "lpu": num_device})
         self.tokenizer = AutoTokenizer.from_pretrained(hyperdex_ckpt)
         self.streamer = TextStreamer(self.tokenizer, use_print=False, use_sse=True, skip_special_tokens=True)
 
