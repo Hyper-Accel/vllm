@@ -17,7 +17,7 @@ from fastapi.responses import JSONResponse, Response, StreamingResponse
 from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.engine.async_llm_engine import AsyncLLMEngine
 from vllm.entrypoints.launcher import serve_http
-from vllm.logger import init_logger
+from vllm.logger import init_logger, print_logger
 from vllm.sampling_params import SamplingParams
 from vllm.usage.usage_lib import UsageContext
 from vllm.utils import (FlexibleArgumentParser, iterate_with_cancellation,
@@ -115,7 +115,6 @@ async def run_server(args: Namespace,
                      **uvicorn_kwargs: Any) -> None:
     logger.info("vLLM API server version %s", VLLM_VERSION)
     logger.info("args: %s", args)
-
     app = await init_app(args, llm_engine)
     assert engine is not None
 
@@ -132,8 +131,9 @@ async def run_server(args: Namespace,
         ssl_cert_reqs=args.ssl_cert_reqs,
         **uvicorn_kwargs,
     )
-
+    print_logger("Detect crtl+C")
     await shutdown_task
+    engine.engine.model_executor.cleanup()
 
 
 if __name__ == "__main__":

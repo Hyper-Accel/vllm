@@ -110,6 +110,7 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
         self.load_config = load_config
         #self.multimodal_config = multimodal_config
         self.is_driver_worker = is_driver_worker
+        #self.output_token_ids = None
 
         #self.block_size = self.cache_config.block_size
         #self.max_num_blocks_per_seq = (self.model_config.max_model_len //
@@ -136,18 +137,19 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
     def load_model(self, num_device = 1) -> None:
         hyperdex_ckpt = "/opt/hyperdex/models/" + self.model_config.model
         print_logger(self.parallel_config.tensor_parallel_size)
-        print_logger(num_device)
         #num_device = self.parallel_config.tensor_parallel_size
         print_logger(self.model_config.model)
         #NOTE(hyunjun): device number shoud be argumentize
         self.model = AutoModelForCausalLM.from_pretrained(hyperdex_ckpt, device_map={"gpu": 0, "lpu": num_device})
         self.tokenizer = AutoTokenizer.from_pretrained(hyperdex_ckpt)
         self.streamer = TextStreamer(self.tokenizer, use_print=False, use_sse=True, skip_special_tokens=True)
+        self.output_token_ids = None
 
     def cleanup(self):
       del self.model
       del self.tokenizer
       del self.streamer
+      del self.output_token_ids
 
     def _prepare_prompt(
         self,
@@ -204,7 +206,6 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
         for seq_group_metadata in seq_group_metadata_list:
             #assert not seq_group_metadata.is_prompt
             seq_ids = list(seq_group_metadata.seq_data.keys())
-            #print_logger(seq_group_metadata.seq_data[0])
             print_logger(seq_ids)
             for seq_id in seq_ids:
                 seq_data = seq_group_metadata.seq_data[seq_id]
@@ -324,90 +325,54 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
         is_prompt = num_prefills > 0
         if is_prompt:
             print_logger(is_prompt)
-            # NOTE(hyunjun): Prompt is not currently supported by LPU
-            # NOTE(woosuk): Since the FlashAttention kernel does not support
-            # ragged inputs, we split the prompts into different batches and
-            # process them separately. This is a temporary hack that should be
-            # optimized by using SplashAttention.
-#            next_token_ids = []
-#            orig_slot_mapping = model_input.attn_metadata.slot_mapping
-#            batch_size = model_input.input_lens.shape[0]
-#            start_idx = 0
-#            for i in range(batch_size):
-#                # Get the actual prefill_len.
-#                prefill_len = model_input.input_lens[i:i + 1].item()
-#                prefill_len = _get_padded_prefill_len(prefill_len)
-#                end_idx = start_idx + prefill_len
-#
-#                model_input.attn_metadata.slot_mapping = orig_slot_mapping[
-#                    None, start_idx:end_idx]
-#                model_input.attn_metadata.num_prefills = 1
-#                output_token_ids = _execute_model(
-#                    model_input.token_ids[None, start_idx:end_idx],
-#                    model_input.position_ids[None, start_idx:end_idx],
-#                    model_input.attn_metadata,
-#                    model_input.input_lens[i:i + 1],
-#                    model_input.t[i:i + 1],
-#                    model_input.p[i:i + 1],
-#                    model_input.num_samples,
-#                    kv_caches,
-#                    clone=True)
-#                # Retrieve the outputs to CPU.
-#                next_token_ids += output_token_ids.cpu().tolist()
-#                start_idx = end_idx
         else:
             # Execute the model.
-    #        output_token_ids = _execute_model(
-    #            model_input.token_ids, model_input.position_ids,
-    #            model_input.attn_metadata, model_input.input_lens,
-    #            model_input.t, model_input.p, model_input.num_samples,
-    #            kv_caches)
             print_logger(model_input.token_ids)
             print_logger(model_input.max_tokens)
             if self.model_execution == False:
-              import time
-              t1 = time.time()
-              print_logger(model_input)
-              #print_logger(model_input.temperature)
-              #print_logger(model_input.repetition_penalty)
-              print_logger(model_input.token_ids)
+              #import time
+              #t1 = time.time()
               for i in range(len(model_input.token_ids)):
                print(model_input.max_tokens[i], model_input.p[i], model_input.k[i], model_input.t[i], model_input.r[i])
-               output_token_ids = self.model.generate(
+               self.output_token_ids = self.model.generate_yield(
                 model_input.token_ids[i].tolist(),
                 max_new_tokens=model_input.max_tokens[i],
                 do_sample=True,
                 top_p=model_input.p[i],
                 top_k=model_input.k[i],
                 temperature=model_input.t[i],
+                streamer=self.streamer
                 #repetition_penalty=model_input.r[i]
                 )
-               self.output_token_ids_buffer = output_token_ids[len(model_input.token_ids[i]):] 
+               #self.output_token_ids_buffer = output_token_ids[len(model_input.token_ids[i]):] 
               #TODO: should be modified to support batch 
-              t2 = time.time()
-              #self.cleanup() #TODO: it should exist in llm_engine
-              print("Core Computation Latency : ", str(t2-t1))
+              #t2 = time.time()
+              #print("Core Computation Latency : ", str(t2-t1))
               self.model_execution = True
-              from transformers import AutoTokenizer
-              tokenizer = AutoTokenizer.from_pretrained("facebook/opt-1.3b", use_fast=False)
-              tmp_output = tokenizer.decode(self.output_token_ids_buffer)
-              print_logger(tmp_output)
+              #from transformers import AutoTokenizer
+              #tokenizer = AutoTokenizer.from_pretrained("facebook/opt-1.3b", use_fast=False)
+              #tmp_output = tokenizer.decode(self.output_token_ids_buffer)
+              #print_logger(tmp_output)
             
             #output_token_ids = output_token_ids[len(model_input.token_ids):]
             #print_logger(output_token_ids) 
             # Retrieve the outputs to CPU.
-            next_token_id = self.output_token_ids_buffer[self.iteration] #.cpu().tolist()
-            self.iteration = self.iteration + 1
             print_logger(self.iteration)
             print_logger(model_input.max_tokens[0])
-            print_logger(type(model_input.max_tokens[0]))
-            print_logger(len(self.output_token_ids_buffer))
-            print_logger(type(len(self.output_token_ids_buffer)))
-            print_logger(len(self.output_token_ids_buffer) == self.iteration) # Add Stop Token Position
-            if len(self.output_token_ids_buffer) == self.iteration:
+            #for next_token in self.output_token_ids:
+            #self.next_token = next(self.output_token_ids)
+            #next_token_id = self.next_token[0]
+            #next_token_id = self.output_token_ids_buffer[self.iteration] #.cpu().tolist()
+            next_token_id = next(self.output_token_ids)[0]
+            print_logger(next_token_id)
+            self.iteration = self.iteration + 1
+            if (model_input.max_tokens[0]) == self.iteration:
               print_logger("After")
               self.model_execution = False
               self.iteration = 0
+              #del self.next_token
+              #del self.output_token_ids
+              #self.output_token_ids = None
    
             # NOTE(woosuk): Minimal code to construct the sampler outputs.
             # The LPU backend does not reuse the sampler, since the LPU backend
