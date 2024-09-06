@@ -938,9 +938,8 @@ class AsyncLLMEngine:
                         print_logger(has_unfinished_requests)
                     else:
                         has_requests_in_progress[virtual_engine] = False
-                        self.engine.model_executor.cleanup()
-                        #self.engine.execute_model.cleanup()
                         print_logger(has_unfinished_requests)
+                        #self.engine.model_executor.cleanup()
             except asyncio.TimeoutError as exc:
                 logger.error(
                     "Engine iteration timed out. This should never happen!")
