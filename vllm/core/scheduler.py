@@ -610,7 +610,6 @@ class Scheduler:
             else:
                 #self._append_slots(seq_group, blocks_to_copy)
                 is_prefill = seq_group.is_prefill()
-                print_logger(is_prefill)
                 scheduled_seq_group: ScheduledSequenceGroup = \
                     self._scheduled_seq_group_cache[self.cache_id].get_object()
                 scheduled_seq_group.seq_group = seq_group

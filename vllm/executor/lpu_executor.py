@@ -30,7 +30,7 @@ class LPUExecutor(ExecutorBase):
             self.model_config.dtype = torch.bfloat16
 
         # Instantiate the worker and load the model to the device.
-        #vLLM does not use torch distributed library to execute multi-LPU
+        # NOTE(hyunjun): vLLM does not use torch distributed library to execute multi-LPU
         self.num_device = self.parallel_config.tensor_parallel_size
         if self.parallel_config.tensor_parallel_size > 1:
             self.parallel_config.tensor_parallel_size = 1

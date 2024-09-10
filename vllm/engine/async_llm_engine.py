@@ -806,7 +806,6 @@ class AsyncLLMEngine:
         if self._background_loop_unshielded is not None:
             self._background_loop_unshielded.cancel()
             self._background_loop_unshielded = None
-            print_logger("shutdown")
         self.background_loop = None
 
     def _init_engine(self, *args,
@@ -935,11 +934,8 @@ class AsyncLLMEngine:
                             asyncio.create_task(
                                 self.engine_step(virtual_engine)))
                         has_requests_in_progress[virtual_engine] = True
-                        print_logger(has_unfinished_requests)
                     else:
                         has_requests_in_progress[virtual_engine] = False
-                        print_logger(has_unfinished_requests)
-                        #self.engine.model_executor.cleanup()
             except asyncio.TimeoutError as exc:
                 logger.error(
                     "Engine iteration timed out. This should never happen!")
@@ -1226,7 +1222,6 @@ class AsyncLLMEngine:
         t = time.perf_counter()
         logger.debug("Starting health check...")
         if self.is_stopped:
-            print_logger("is_stopped")
             raise AsyncEngineDeadError("Background loop is stopped.")
 
         if self.engine_use_ray:

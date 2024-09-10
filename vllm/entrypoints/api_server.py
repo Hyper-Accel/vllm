@@ -131,7 +131,6 @@ async def run_server(args: Namespace,
         ssl_cert_reqs=args.ssl_cert_reqs,
         **uvicorn_kwargs,
     )
-    print_logger("Detect crtl+C")
     await shutdown_task
     engine.engine.model_executor.cleanup()
 

@@ -3,8 +3,6 @@ from typing import List, Optional, Tuple, Union
 
 import torch
 from hyperdex.transformers import AutoModelForCausalLM, AutoTokenizer
-#import torch_xla.core.xla_model as xm
-#import torch_xla.runtime as xr
 
 import vllm.envs as envs
 from vllm.config import (CacheConfig, DeviceConfig, LoadConfig, ModelConfig,
@@ -32,7 +30,6 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         device_config: DeviceConfig,
         cache_config: CacheConfig,
         load_config: LoadConfig,
-        #multimodal_config: Optional[MultiModalConfig],
         local_rank: int,
         rank: int,
         distributed_init_method: str,
@@ -45,7 +42,6 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         self.device_config = device_config
         self.cache_config = cache_config
         self.load_config = load_config
-        #self.multimodal_config = multimodal_config
         self.local_rank = local_rank
         self.rank = rank
         self.distributed_init_method = distributed_init_method
@@ -64,7 +60,6 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
             device_config,
             cache_config,
             load_config,
-            #multimodal_config,
             is_driver_worker=is_driver_worker)
     
     def cleanup(self):
@@ -86,7 +81,7 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
             self.parallel_config.tensor_parallel_size,
             self.parallel_config.pipeline_parallel_size)
  
-#         # Set random seed.
+        # Set random seed.
         set_random_seed(self.model_config.seed)
 
     def load_model(self, num_device):
@@ -129,10 +124,11 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
     ) -> WorkerInput:
         virtual_engine = execute_model_req.virtual_engine
         num_seq_groups = len(execute_model_req.seq_group_metadata_list)
+        # NOTE(hyunjun): HRT already supports device-to-device data transfer
         blocks_to_swap_in = _make_src_to_dst(
-            execute_model_req.blocks_to_swap_in, "cpu", "cpu")              # self.device
+            execute_model_req.blocks_to_swap_in, "cpu", "cpu")
         blocks_to_swap_out = _make_src_to_dst(
-            execute_model_req.blocks_to_swap_out, "cpu", "cpu") # self.device
+            execute_model_req.blocks_to_swap_out, "cpu", "cpu") 
         blocks_to_copy = _make_src_to_dst(execute_model_req.blocks_to_copy,
                                           "cpu", "cpu")
         return WorkerInput(
@@ -164,15 +160,3 @@ def _make_src_to_dst(
     return src_indices, dst_indices
 
 
-@torch.compile(backend="openxla")
-def _insert_kv(
-    k: torch.Tensor,
-    v: torch.Tensor,
-    indices: torch.Tensor,
-    lpu_k_cache: torch.Tensor,
-    lpu_v_cache: torch.Tensor,
-) -> None:
-    torch.ops.xla.dynamo_set_buffer_donor_(lpu_k_cache, True)
-    torch.ops.xla.dynamo_set_buffer_donor_(lpu_v_cache, True)
-    lpu_k_cache[:, indices] = k
-    lpu_v_cache[:, indices] = v
