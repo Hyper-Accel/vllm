@@ -360,7 +360,7 @@ class LLMEngine:
         # GPU and CPU blocks, which are profiled in the distributed executor.
         self.scheduler = [
             Scheduler(
-                scheduler_config, cache_config, lora_config,
+                scheduler_config, cache_config, lora_config, device_config,
                 parallel_config.pipeline_parallel_size,
                 functools.partial(self._process_model_outputs,
                                   virtual_engine=v_id,
@@ -481,6 +481,9 @@ class LLMEngine:
                 from vllm.executor.tpu_executor import TPUExecutor
                 executor_class = TPUExecutor
         elif engine_config.device_config.device_type == "fpga":
+            if engine_config.device_config.num_lpu_devices == 0:
+              raise NotImplementedError(
+                  "fpga device type should select num_lpu_devices larger than 1")
             from vllm.executor.lpu_executor import LPUExecutor
             executor_class = LPUExecutor
         elif engine_config.device_config.device_type == "cpu":
@@ -1579,7 +1582,8 @@ class LLMEngine:
             # the RPC thread in the workers so that they can process any other
             # queued control plane messages, such as add/remove lora adapters.
             self.model_executor.stop_remote_worker_execution_loop()
-            self.model_executor.cleanup()
+            if self.device_config.device_type == "fpga":
+                self.model_executor.cleanup()
 
         return ctx.request_outputs
 

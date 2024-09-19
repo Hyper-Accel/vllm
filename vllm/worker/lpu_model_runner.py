@@ -159,6 +159,7 @@ class ModelInputForLPU(ModelRunnerInputBase):
     p: List[int]
     k: List[int]
     r: List[int]
+    stop: List[int]
     max_tokens: List[int]
     min_tokens: List[int]
     seq_groups: List[List[int]]
@@ -173,6 +174,7 @@ class ModelInputForLPU(ModelRunnerInputBase):
             "p": self.p,
             "k": self.k,
             "r": self.r,
+            "stop": self.stop,
             "max_tokens": self.max_tokens,
             "min_tokens": self.min_tokens,
             "seq_groups": self.seq_groups,
@@ -217,11 +219,13 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
         self.iteration = 0
 
 
-    def load_model(self, num_device = 1) -> None:
+    def load_model(self, num_gpu_devices = 0, num_lpu_devices = 1) -> None:
         hyperdex_ckpt = os.path.join(MODEL_PATH, self.model_config.model)
-        HyperDexSDK.compile(HyperDexSDK, hyperdex_ckpt, num_device)
+        HyperDexSDK.compile(HyperDexSDK, hyperdex_ckpt, num_lpu_devices)
         # NOTE(hyunjun): The number of GPU should be added
-        self.model = AutoModelForCausalLM.from_pretrained(hyperdex_ckpt, device_map={"gpu": 0, "lpu": num_device})
+        print_logger(num_gpu_devices)
+        print_logger(num_lpu_devices)
+        self.model = AutoModelForCausalLM.from_pretrained(hyperdex_ckpt, device_map={"gpu": num_gpu_devices, "lpu": num_lpu_devices})
         self.tokenizer = AutoTokenizer.from_pretrained(hyperdex_ckpt)
         self.streamer = TextStreamer(self.tokenizer, use_print=False, use_sse=True, skip_special_tokens=True)
         self.output_token_ids = None
@@ -323,6 +327,7 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
         p = []
         k = []
         r = []
+        stop = []
         max_tokens = []
         min_tokens = []
         for seq_group_metadata in seq_group_metadata_list:
@@ -331,6 +336,7 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
             p.append(sampling_params.top_p)
             k.append(sampling_params.top_k)
             r.append(sampling_params.repetition_penalty)
+            stop.append(sampling_params.stop_token_ids)
             max_tokens.append(sampling_params.max_tokens)
             min_tokens.append(sampling_params.min_tokens)
             if sampling_params.use_beam_search:
@@ -344,7 +350,7 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
                     "prompt_logprobs is not currently supported by the LPU "
                     "backend.")
 
-        return t, p, k, r, max_tokens, min_tokens
+        return t, p, k, r, stop, max_tokens, min_tokens
 
     def prepare_model_input(
         self,
@@ -363,14 +369,14 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
         else:
             inputs = self._prepare_decode(seq_group_metadata_list)
         input_tokens, input_positions, input_lens = inputs
-        t, p, k, r, max_tokens, min_tokens = self._prepare_sample(seq_group_metadata_list)
+        t, p, k, r, stop, max_tokens, min_tokens = self._prepare_sample(seq_group_metadata_list)
 
         seq_groups = [
             list(metadata.seq_data.keys())
             for metadata in seq_group_metadata_list
         ]
         return ModelInputForLPU(input_tokens, input_positions, input_lens,
-                                t, p, k, r, max_tokens, min_tokens, seq_groups)
+                                t, p, k, r, stop, max_tokens, min_tokens, seq_groups)
 
     def make_model_input_from_broadcasted_tensor_dict(
             self, tensor_dict: Dict[str, Any]) -> ModelInputForLPU:
@@ -399,6 +405,7 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
         else:
             # Execute the model.
             if self.model_execution == False:
+              # NOTE(hyunjun): Currently len(model_input.token_ids) is zero because LPU does not support batch
               for i in range(len(model_input.token_ids)):
                self.output_token_ids = self.model.generate_yield(
                 model_input.token_ids[i].tolist(),
@@ -407,8 +414,9 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
                 top_p=model_input.p[i],
                 top_k=model_input.k[i],
                 temperature=model_input.t[i],
+                repetition_penalty=model_input.r[i],
+                stop=model_input.stop[i],
                 streamer=self.streamer
-                #repetition_penalty=model_input.r[i]
                 )
               # NOTE(hyunjun): LPU will support batching later, but not now
               self.model_execution = True

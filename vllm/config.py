@@ -1011,14 +1011,18 @@ class SchedulerConfig:
 
 class DeviceConfig:
     device: Optional[torch.device]
+    num_gpu_devices: int
+    num_lpu_devices: int
 
-    def __init__(self, device: str = "auto") -> None:
+    def __init__(self, device: str = "auto", num_gpu_devices: int = 0, num_lpu_devices: int = 1) -> None:
         if device == "auto":
             # Automated device type detection
             if is_neuron():
                 self.device_type = "neuron"
             elif is_openvino():
                 self.device_type = "openvino"
+            elif current_platform.is_lpu():
+                self.device_type = "fpga"
             elif current_platform.is_tpu():
                 self.device_type = "tpu"
             elif is_cpu():
@@ -1042,6 +1046,8 @@ class DeviceConfig:
             # Set device with device type
             self.device = torch.device(self.device_type)
 
+        self.num_gpu_devices=num_gpu_devices
+        self.num_lpu_devices=num_lpu_devices
 
 class SpeculativeConfig:
     """Configuration for speculative decoding.

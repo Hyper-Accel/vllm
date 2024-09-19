@@ -14,7 +14,7 @@ from vllm.config import (CacheConfig, DecodingConfig, DeviceConfig,
                          PromptAdapterConfig, SchedulerConfig,
                          SpeculativeConfig, TokenizerPoolConfig)
 from vllm.executor.executor_base import ExecutorBase
-from vllm.logger import init_logger
+from vllm.logger import init_logger, print_logger
 from vllm.model_executor.layers.quantization import QUANTIZATION_METHODS
 from vllm.utils import FlexibleArgumentParser
 
@@ -148,6 +148,10 @@ class EngineArgs:
     otlp_traces_endpoint: Optional[str] = None
     collect_detailed_traces: Optional[str] = None
     disable_async_output_proc: bool = False
+
+    #NOTE(hyunjun): custom option for hybrid
+    num_gpu_devices: int = 0
+    num_lpu_devices: int = 1
 
     def __post_init__(self):
         if self.tokenizer is None:
@@ -741,6 +745,16 @@ class EngineArgs:
             default=EngineArgs.disable_async_output_proc,
             help="Disable async output processing. This may result in "
             "lower performance.")
+        parser.add_argument(
+            '--num-gpu-devices',
+            type=int,
+            default=0,
+            help='the number of gpu devices for hybrid system')
+        parser.add_argument(
+            '--num-lpu-devices',
+            type=int,
+            default=1,
+            help='the number of lpu devices for hybrid system')
         return parser
 
     @classmethod
@@ -775,8 +789,7 @@ class EngineArgs:
         assert self.cpu_offload_gb >= 0, (
             "CPU offload space must be non-negative"
             f", but got {self.cpu_offload_gb}")
-
-        device_config = DeviceConfig(device=self.device)
+        device_config = DeviceConfig(device=self.device, num_gpu_devices=self.num_gpu_devices, num_lpu_devices=self.num_lpu_devices)
         model_config = ModelConfig(
             model=self.model,
             tokenizer=self.tokenizer,

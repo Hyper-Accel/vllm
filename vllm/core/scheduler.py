@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import (Callable, Deque, Dict, Iterable, List, Optional, Set,
                     Tuple, Union)
 
-from vllm.config import CacheConfig, LoRAConfig, SchedulerConfig
+from vllm.config import CacheConfig, LoRAConfig, SchedulerConfig, DeviceConfig
 from vllm.core.interfaces import AllocStatus, BlockSpaceManager
 from vllm.logger import init_logger, print_logger
 from vllm.lora.request import LoRARequest
@@ -301,6 +301,7 @@ class Scheduler:
         scheduler_config: SchedulerConfig,
         cache_config: CacheConfig,
         lora_config: Optional[LoRAConfig],
+        device_config: Optional[DeviceConfig],
         pipeline_parallel_size: int = 1,
         output_proc_callback: Optional[Callable] = None,
     ) -> None:
@@ -310,6 +311,10 @@ class Scheduler:
         # simple and NOT fair. It can lead to starvation of some
         # LoRAs. This should be improved in the future.
         self.lora_config = lora_config
+        # NOTE(hyunjun): Currently, LPU vLLM backend needs to reduce scheduler dependency
+        # _can_append_slots, _append_slots
+        # Temporally, we change resource management flow with device config
+        self.device_config = device_config
 
         version = "v1"
         if self.scheduler_config.use_v2_block_manager:
@@ -576,63 +581,119 @@ class Scheduler:
                 assert self.output_proc_callback is not None
                 self.output_proc_callback()
                 self.running = tmp
+            if self.device_config.device_type == "fpga":
+              while not True: #self._can_append_slots(seq_group):
+                  budget.subtract_num_batched_tokens(seq_group.request_id,
+                                                     num_running_tokens)
+                  num_running_seqs = seq_group.get_max_num_running_seqs()
+                  budget.subtract_num_seqs(seq_group.request_id,
+                                           num_running_seqs)
 
-            while not True: #TODO #self._can_append_slots(seq_group):
-                budget.subtract_num_batched_tokens(seq_group.request_id,
-                                                   num_running_tokens)
-                num_running_seqs = seq_group.get_max_num_running_seqs()
-                budget.subtract_num_seqs(seq_group.request_id,
-                                         num_running_seqs)
+                  if (curr_loras is not None and seq_group.lora_int_id > 0
+                          and seq_group.lora_int_id in curr_loras):
+                      curr_loras.remove(seq_group.lora_int_id)
 
-                if (curr_loras is not None and seq_group.lora_int_id > 0
-                        and seq_group.lora_int_id in curr_loras):
-                    curr_loras.remove(seq_group.lora_int_id)
+                  if running_queue:
+                      # Preempt the lowest-priority sequence groups.
+                      victim_seq_group = running_queue.pop()
+                      preempted_mode = self._preempt(victim_seq_group,
+                                                     blocks_to_swap_out)
+                      if preempted_mode == PreemptionMode.RECOMPUTE:
+                          preempted.append(victim_seq_group)
+                      else:
+                          swapped_out.append(victim_seq_group)
+                  else:
+                      # No other sequence groups can be preempted.
+                      # Preempt the current sequence group.
+                      preempted_mode = self._preempt(seq_group,
+                                                     blocks_to_swap_out)
+                      if preempted_mode == PreemptionMode.RECOMPUTE:
+                          preempted.append(seq_group)
+                      else:
+                          swapped_out.append(seq_group)
+                      break
+              else:
+                  is_prefill = seq_group.is_prefill()
+                  scheduled_seq_group: ScheduledSequenceGroup = \
+                      self._scheduled_seq_group_cache[self.cache_id].get_object()
+                  scheduled_seq_group.seq_group = seq_group
+                  if is_prefill:
+                      scheduled_seq_group.token_chunk_size = num_running_tokens
+                      prefill_seq_groups.append(scheduled_seq_group)
+                      ret.prefill_seq_groups_list.append(seq_group)
+                  else:
+                      scheduled_seq_group.token_chunk_size = 1
+                      decode_seq_groups.append(scheduled_seq_group)
+                      ret.decode_seq_groups_list.append(seq_group)
 
-                if running_queue:
-                    # Preempt the lowest-priority sequence groups.
-                    victim_seq_group = running_queue.pop()
-                    preempted_mode = self._preempt(victim_seq_group,
-                                                   blocks_to_swap_out)
-                    if preempted_mode == PreemptionMode.RECOMPUTE:
-                        preempted.append(victim_seq_group)
-                    else:
-                        swapped_out.append(victim_seq_group)
-                else:
-                    # No other sequence groups can be preempted.
-                    # Preempt the current sequence group.
-                    preempted_mode = self._preempt(seq_group,
-                                                   blocks_to_swap_out)
-                    if preempted_mode == PreemptionMode.RECOMPUTE:
-                        preempted.append(seq_group)
-                    else:
-                        swapped_out.append(seq_group)
-                    break
+                  budget.add_num_batched_tokens(seq_group.request_id,
+                                                num_running_tokens)
+                  # OPTIMIZATION:  Note that get_max_num_running_seqs is
+                  # expensive. For the default scheduling chase where
+                  # enable_chunking is False, num_seqs are updated before running
+                  # this method, so we don't have to update it again here.
+                  if enable_chunking:
+                      num_running_seqs = seq_group.get_max_num_running_seqs()
+                      budget.add_num_seqs(seq_group.request_id, num_running_seqs)
+                  if curr_loras is not None and seq_group.lora_int_id > 0:
+                      curr_loras.add(seq_group.lora_int_id)
             else:
-                #self._append_slots(seq_group, blocks_to_copy)
-                is_prefill = seq_group.is_prefill()
-                scheduled_seq_group: ScheduledSequenceGroup = \
-                    self._scheduled_seq_group_cache[self.cache_id].get_object()
-                scheduled_seq_group.seq_group = seq_group
-                if is_prefill:
-                    scheduled_seq_group.token_chunk_size = num_running_tokens
-                    prefill_seq_groups.append(scheduled_seq_group)
-                    ret.prefill_seq_groups_list.append(seq_group)
-                else:
-                    scheduled_seq_group.token_chunk_size = 1
-                    decode_seq_groups.append(scheduled_seq_group)
-                    ret.decode_seq_groups_list.append(seq_group)
+              while not self._can_append_slots(seq_group):
+                  budget.subtract_num_batched_tokens(seq_group.request_id,
+                                                     num_running_tokens)
+                  num_running_seqs = seq_group.get_max_num_running_seqs()
+                  budget.subtract_num_seqs(seq_group.request_id,
+                                           num_running_seqs)
 
-                budget.add_num_batched_tokens(seq_group.request_id,
-                                              num_running_tokens)
-                # OPTIMIZATION:  Note that get_max_num_running_seqs is
-                # expensive. For the default scheduling chase where
-                # enable_chunking is False, num_seqs are updated before running
-                # this method, so we don't have to update it again here.
-                if enable_chunking:
-                    num_running_seqs = seq_group.get_max_num_running_seqs()
-                    budget.add_num_seqs(seq_group.request_id, num_running_seqs)
-                if curr_loras is not None and seq_group.lora_int_id > 0:
-                    curr_loras.add(seq_group.lora_int_id)
+                  if (curr_loras is not None and seq_group.lora_int_id > 0
+                          and seq_group.lora_int_id in curr_loras):
+                      curr_loras.remove(seq_group.lora_int_id)
+
+                  if running_queue:
+                      # Preempt the lowest-priority sequence groups.
+                      victim_seq_group = running_queue.pop()
+                      preempted_mode = self._preempt(victim_seq_group,
+                                                     blocks_to_swap_out)
+                      if preempted_mode == PreemptionMode.RECOMPUTE:
+                          preempted.append(victim_seq_group)
+                      else:
+                          swapped_out.append(victim_seq_group)
+                  else:
+                      # No other sequence groups can be preempted.
+                      # Preempt the current sequence group.
+                      preempted_mode = self._preempt(seq_group,
+                                                     blocks_to_swap_out)
+                      if preempted_mode == PreemptionMode.RECOMPUTE:
+                          preempted.append(seq_group)
+                      else:
+                          swapped_out.append(seq_group)
+                      break
+              else:
+                  self._append_slots(seq_group, blocks_to_copy)
+                  is_prefill = seq_group.is_prefill()
+                  scheduled_seq_group: ScheduledSequenceGroup = \
+                      self._scheduled_seq_group_cache[self.cache_id].get_object()
+                  scheduled_seq_group.seq_group = seq_group
+                  if is_prefill:
+                      scheduled_seq_group.token_chunk_size = num_running_tokens
+                      prefill_seq_groups.append(scheduled_seq_group)
+                      ret.prefill_seq_groups_list.append(seq_group)
+                  else:
+                      scheduled_seq_group.token_chunk_size = 1
+                      decode_seq_groups.append(scheduled_seq_group)
+                      ret.decode_seq_groups_list.append(seq_group)
+
+                  budget.add_num_batched_tokens(seq_group.request_id,
+                                                num_running_tokens)
+                  # OPTIMIZATION:  Note that get_max_num_running_seqs is
+                  # expensive. For the default scheduling chase where
+                  # enable_chunking is False, num_seqs are updated before running
+                  # this method, so we don't have to update it again here.
+                  if enable_chunking:
+                      num_running_seqs = seq_group.get_max_num_running_seqs()
+                      budget.add_num_seqs(seq_group.request_id, num_running_seqs)
+                  if curr_loras is not None and seq_group.lora_int_id > 0:
+                      curr_loras.add(seq_group.lora_int_id)
 
         self._scheduler_running_outputs_cache[self.next_cache_id].reset()
         self._scheduled_seq_group_cache[self.next_cache_id].reset()

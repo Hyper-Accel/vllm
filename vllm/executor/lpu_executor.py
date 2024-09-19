@@ -31,12 +31,9 @@ class LPUExecutor(ExecutorBase):
 
         # Instantiate the worker and load the model to the device.
         # NOTE(hyunjun): vLLM does not use torch distributed library to execute multi-LPU
-        self.num_device = self.parallel_config.tensor_parallel_size
-        if self.parallel_config.tensor_parallel_size > 1:
-            self.parallel_config.tensor_parallel_size = 1
         self.driver_worker = self._create_worker()
         self.driver_worker.init_device()
-        self.driver_worker.load_model(self.num_device)
+        self.driver_worker.load_model(self.device_config.num_gpu_devices, self.device_config.num_lpu_devices)
 
     def _get_worker_kwargs(
         self,

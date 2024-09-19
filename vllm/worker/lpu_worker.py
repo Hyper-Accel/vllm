@@ -69,7 +69,6 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         self.device = torch.device("fpga")
         self.device_config.device = self.device
         #vLLM does not use torch distributed library to execute multi-LPU
-        self.parallel_config.world_size = 1
         init_distributed_environment(
             world_size=self.parallel_config.world_size,
             rank=self.rank,
@@ -84,8 +83,8 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         # Set random seed.
         set_random_seed(self.model_config.seed)
 
-    def load_model(self, num_device):
-        self.model_runner.load_model(num_device)
+    def load_model(self, num_gpu_devices, num_lpu_devices):
+        self.model_runner.load_model(num_gpu_devices, num_lpu_devices)
 
     # LPU does not support this function
     def determine_num_available_blocks(self) -> Tuple[int, int]:
