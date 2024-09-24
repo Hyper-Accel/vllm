@@ -71,51 +71,54 @@ class HyperDexSDK:
             hf_access_token = None
             while True:
                 try:
-                    print("[Info\t] Download model at {}".format(model_ckpt))
+                    print("[INFO\t] Download model at {}".format(model_ckpt))
                     transformers.AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True, token=hf_access_token).save_pretrained(model_ckpt)
                     transformers.AutoTokenizer.from_pretrained(model_id, trust_remote_code=True, token=hf_access_token).save_pretrained(model_ckpt)
                 except:
                     if hf_access_token is None:
-                        print("[Info\t] Repo model {} is gated. You must be authenticated to access it.".format(model_id))
+                        print("[INFO\t] Repo model {} is gated. You must be authenticated to access it.".format(model_id))
                         hf_access_token = input("\033[0m[\033[32mOption\t\033[0m] Please enter the HuggingFace access token: ")
-                        continue
+                        pass
                     else:
                         print("\033[0m[\033[31mError\033[0m\t] \"{}\" model does not exist in HuggingFace Hub".format(model_id))
                         raise RuntimeError("Please check the huggingface model id")
                 break
             # Use pre-downloaded model
         else:
-            print("[Info\t] Found model at {}".format(model_ckpt))
-            print("[Info\t] Skip download")
+            pass
+            #print("[INFO\t] Found model at {}".format(model_ckpt))
+            #print("[INFO\t] Skip download")
 
     # Convert model
     def convert(model_ckpt: str):
-        print("[Info\t] Convert the model to HyperDex model format")
+        #print("[INFO\t] Convert the model to HyperDex model format")
         # Check if the checkpoint exist
         bin_exist = os.path.isfile(os.path.join(model_ckpt, "hyperdex_model.bin"))
         cfg_exist = os.path.isfile(os.path.join(model_ckpt, "hyperdex_config.json"))
         if bin_exist and cfg_exist:
-            print("[Info\t] Found binary at {}".format(os.path.join(model_ckpt, "hyperdex_model.bin")))
-            print("[Info\t] Found config at ls{}".format(os.path.join(model_ckpt, "hyperdex_config.json")))
-            print("[Info\t] Skip converting")
+            #print("[INFO\t] Found binary at {}".format(os.path.join(model_ckpt, "hyperdex_model.bin")))
+            #print("[INFO\t] Found config at ls{}".format(os.path.join(model_ckpt, "hyperdex_config.json")))
+            #print("[INFO\t] Skip converting")
+            pass
         else:
             hf_converter = AutoModelConverter(model_ckpt)
             hf_converter.convert(model_ckpt)
             hf_converter.save(model_ckpt)
-            print("[Info\t] Save the converted checkpoint at {}".format(model_ckpt))
+            print("[INFO\t] Save the converted checkpoint at {}".format(model_ckpt))
 
     # Mapping model and i/o
     def mapping(model_path: str, num_device: int):
         # Check if the number of device is invalid
         if num_device > 0 and (num_device & (num_device - 1)) == 0:
-            print("[Info\t] Optimize the model paramater")
+            #print("[INFO\t] Optimize the model paramater")
             mapper = memory_mapper(model=model_path, num_device=num_device, slib=os.path.join(COMPILER_PATH, "libhdexmm.so"))
 
             ddr_config = "config_" + str(num_device) + "fpga_ddr.ini"
             io_exist = os.path.isfile(os.path.join(model_path, "config", ddr_config))
             if io_exist:
-                print("[Info\t] Found io at ", os.path.join(model_path, "config"))
-                print("[Info\t] Skip io memory mapping")
+                #print("[INFO\t] Found io at ", os.path.join(model_path, "config"))
+                #print("[INFO\t] Skip io memory mapping")
+                pass
             else:
                 mapper.io()
             
@@ -126,27 +129,29 @@ class HyperDexSDK:
                                  os.path.join(model_path, "config", hbm_config)
                              )
             if prm_exist:
-                print("[Info\t] Found param at ", model_path)
-                print("[Info\t] Skip parameter memory mapping")
+                pass
+                #print("[INFO\t] Found param at ", model_path)
+                #print("[INFO\t] Skip parameter memory mapping")
             else:
                 mapper.param()
-            print("[Info\t] Save the optimized data at {}/param".format(model_path))
+                print("[INFO\t] Save the optimized data at {}/param".format(model_path))
         else:
             print("\033[0m[\033[31mError\033[0m\t] The number of devices should be a power of two. (ex. 1, 2, 4, 8, etc.)")
             raise RuntimeError("The number of devices is not a power of two!")
 
     # Generate instruction
     def instruction(model_id, num_device):
-        print("[Info\t] Optimize the model instruction")
+        #print("[INFO\t] Optimize the model instruction")
         generator = inst_generator(model=model_id, prefix=MODEL_PATH, num_device=num_device, slib=os.path.join(COMPILER_PATH, "libhdexig.so"))
         model_inst = os.listdir(os.path.join(MODEL_PATH, model_id, "inst"))
         inst_exist = len([inst for inst in model_inst if f"_{str(num_device)}fpga.bin" in inst]) == 2
         if inst_exist:
-            print("[Info\t] Found instructions at ", os.path.join(MODEL_PATH, model_id, "inst"))
-            print("[Info\t] Skip instructions memory mapping")
+            pass
+            #print("[INFO\t] Found instructions at ", os.path.join(MODEL_PATH, model_id, "inst"))
+            #print("[INFO\t] Skip instructions memory mapping")
         else:
             generator.compile()
-        print("[Info\t] Save the optimized instruction at /opt/hyperdex/models/{}/inst".format(model_id))
+            print("[INFO\t] Save the optimized instruction at /opt/hyperdex/models/{}/inst".format(model_id))
 
 
 @dataclass(frozen=True)
@@ -223,8 +228,8 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
         hyperdex_ckpt = os.path.join(MODEL_PATH, self.model_config.model)
         HyperDexSDK.compile(HyperDexSDK, hyperdex_ckpt, num_lpu_devices)
         # NOTE(hyunjun): The number of GPU should be added
-        print_logger(num_gpu_devices)
-        print_logger(num_lpu_devices)
+        #print_logger(num_gpu_devices)
+        #print_logger(num_lpu_devices)
         self.model = AutoModelForCausalLM.from_pretrained(hyperdex_ckpt, device_map={"gpu": num_gpu_devices, "lpu": num_lpu_devices})
         self.tokenizer = AutoTokenizer.from_pretrained(hyperdex_ckpt)
         self.streamer = TextStreamer(self.tokenizer, use_print=False, use_sse=True, skip_special_tokens=True)
