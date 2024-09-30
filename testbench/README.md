@@ -45,8 +45,9 @@
 #### test_text_generation.py
 <pre>
   Module that generates output according to the given test case.
-  This module needs)
+  This module needs:
     /HyperDex/data
+    /root/data/hyperaccel/model/
   
 </pre>
 
