@@ -37,8 +37,20 @@
 #### cases_answer.py
 <pre>
   Generates variables for each test case.
-  Model name, num of devices, output token length, input prompt, golden answer, ... are save in each test case variable.
+  Model name, num of devices, output token length, input prompt, golden answer,... are saved in each test case variable.
 </pre>
+
+#### test_text_generation.py
+<pre>
+  Gen
+</pre>
+
+#### fpga_verification.py
+<pre>
+  Generates v
+</pre>
+
+
 
 
 
