@@ -44,7 +44,10 @@
 
 #### test_text_generation.py
 <pre>
-  Gen
+  Module that generates output according to the given test case.
+  This module needs)
+    /HyperDex/data
+  
 </pre>
 
 #### fpga_verification.py
