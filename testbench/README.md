@@ -33,7 +33,7 @@
 
 #### test_answer.py
 <pre>
-  Golden answers to each input prompts for 100, 200, 400, 600, 800, 1000, 1200 output token lengths.
+  Golden answers to each input prompts for output token length of 100, 200, 400, 600, 800, 1000, 1200.
 </pre>
 
 #### cases_answer.py
