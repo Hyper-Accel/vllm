@@ -1,5 +1,5 @@
 ## 1. Hugging Face FPGA Verification
-```bash
+<pre>
 .
 ├── conftest.py
 ├── fpga_verification.py
@@ -11,23 +11,35 @@
 ├── test_cases.py
 ├── test_prompt.py
 └── test_text_generation.py
-```
+</pre>
 #### conftest.py
-```bash
-  Specifies log name format
-```
+<pre>
+  Specifies saved log name format.
+</pre>
 
 #### pytest.ini
-```bash
-  Specifies live log format
-```
+<pre>
+  Specifies live log format.
+</pre>
 
 #### test_prompt.py
-```bash
+<pre>
   Input prompts to verfiy:
     └── short input
     └── long input
-```
+</pre>
+
+#### test_answer.py
+<pre>
+  Golden answers to each input prompts for 100, 200, 400, 600, 800, 1000, 1200 output token lengths.
+</pre>
+
+#### cases_answer.py
+<pre>
+  Generates variables for each test case.
+  Model name, num of devices, output token length, input prompt, golden answer, ... are save in each test case variable.
+</pre>
+
 
 
 ## 2. vLLM FPGA Verification
