@@ -43,10 +43,9 @@ Model name, num of devices, output token length, input prompt, golden answer,...
 #### api_test_text_generation.py
 <pre>
 This module generates output according to the given test case.
-Code is based on /HyperDexPython/examples/applications/text_generation.py
+Code is based on 
 
-This module needs:
-  /HyperDex-Python/hyperdex/transformers
+
   
 </pre>
 
