@@ -1,6 +1,6 @@
 # Pytest
 
-#### Simple Pytest example:
+### Simple Pytest example:
 ```bash
 import pytest
 
