@@ -1,6 +1,5 @@
 ## 1. Hugging Face FPGA Verification
 
-#### File Tree
 <pre>
 .
 ├── conftest.py
@@ -46,4 +45,25 @@
 ├── test_prompt.py
 └── api_test_text_generation.py
 </pre>
+
+
+
+# Pytest
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
