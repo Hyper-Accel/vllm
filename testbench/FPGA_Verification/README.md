@@ -16,45 +16,45 @@
 </pre>
 #### conftest.py
 <pre>
-  Specifies saved log name format.
+Specifies saved log name format.
 </pre>
 
 #### pytest.ini
 <pre>
-  Specifies live log format.
+Specifies live log format.
 </pre>
 
 #### test_prompt.py
 <pre>
-  Input prompts to verfiy:
-    └── short input
-    └── long input
+Input prompts to verfiy:
+  └── short input
+  └── long input
 </pre>
 
 #### test_answer.py
 <pre>
-  Golden answers to each input prompts for output token length of 100, 200, 400, 600, 800, 1000, 1200.
+Golden answers to each input prompts for output token length of 100, 200, 400, 600, 800, 1000, 1200.
 </pre>
 
 #### cases_answer.py
 <pre>
-  Generates variables for each test case.
-  Model name, num of devices, output token length, input prompt, golden answer,...are saved in each test case variable.
+Generates variables for each test case.
+Model name, num of devices, output token length, input prompt, golden answer,...are saved in each test case variable.
 </pre>
 
 #### test_text_generation.py
 <pre>
-  This module generates output according to the given test case.
-  Code is based on /HyperDexPython/examples/applications/text_generation.py
-  
-  This module needs:
-    /HyperDex-Python/hyperdex/transformers
+This module generates output according to the given test case.
+Code is based on /HyperDexPython/examples/applications/text_generation.py
+
+This module needs:
+  /HyperDex-Python/hyperdex/transformers
   
 </pre>
 
 #### fpga_verification.py
 <pre>
-  This module compares golden answer and generated output. Logs will be save in ./logs
+This module compares golden answer and generated output. Logs will be save in ./logs
   
   How to run verification:
   pytest fpga_verification.py                          # prints full info
