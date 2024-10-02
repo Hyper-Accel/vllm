@@ -44,8 +44,8 @@
 
 #### test_text_generation.py
 <pre>
-  Module that generates output according to the given test case.
-  This code is based on /HyperDexPython/examples/applications/text_generation.py
+  This module generates output according to the given test case.
+  Code is based on /HyperDexPython/examples/applications/text_generation.py
   
   This module needs:
     /HyperDex-Python/hyperdex/transformers
@@ -54,7 +54,7 @@
 
 #### fpga_verification.py
 <pre>
-  Compares golden answer and generated output. Logs will be save in ./logs
+  This module compares golden answer and generated output. Logs will be save in ./logs
   
   How to run verification:
   pytest fpga_verification.py                          # prints full info
