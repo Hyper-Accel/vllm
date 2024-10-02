@@ -72,6 +72,7 @@ def test(i,j,k):
 #### 1. Parametrized Testing:
 <pre>
 The @pytest.mark.parametrize decorator creates a range of test cases based on all combinations of i, j, and k.
+You may add more combinations in test_cases.py
 </pre>
 
 #### 2. Test Function:
