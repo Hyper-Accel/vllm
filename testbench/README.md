@@ -45,7 +45,7 @@
 #### test_text_generation.py
 <pre>
   Module that generates output according to the given test case.
-  Code is based on /HyperDexPython/examples/applications/text_generation.py
+  This code is based on /HyperDexPython/examples/applications/text_generation.py
   
   This module needs:
     /HyperDex-Python/hyperdex/transformers
