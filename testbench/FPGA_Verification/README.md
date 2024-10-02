@@ -54,7 +54,7 @@ This module needs:
 
 #### fpga_verification.py
 <pre>
-This module compares golden answer and generated output. Logs will be save in ./logs
+This module compares expected answer and generated output. Logs will be save in ./logs
   
   How to run verification:
   pytest fpga_verification.py                          # prints full info
