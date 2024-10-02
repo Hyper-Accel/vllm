@@ -46,14 +46,19 @@
 <pre>
   Module that generates output according to the given test case.
   This module needs:
-    /HyperDex/data
-    /root/data/hyperaccel/model/
+    /HyperDex-Python/hyperdex/transformers
   
 </pre>
 
 #### fpga_verification.py
 <pre>
-  Generates v
+  Compares golden answer and generated output. Logs will be save in ./logs
+  
+  How to run verification:
+  pytest fpga_verification.py                          # prints full info
+  pytest fpga_verification.py --tb=no -v               # prints only the summary info
+  pytest fpga_verification.py --tb=short               # prints info
+  pytest fpga_verification.py --tb=short -k 'test_1'   # select tests
 </pre>
 
 
