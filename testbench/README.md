@@ -71,22 +71,20 @@ def test(i,j,k):
 
 #### 1. Parametrized Testing:
 <pre>
-The @pytest.mark.parametrize decorator creates a range of test cases based on all combinations of i, j, and k.\
-This reduces the need to write separate test cases manually for every possible combination.
+The @pytest.mark.parametrize decorator creates a range of test cases based on all combinations of i, j, and k.
 </pre>
 
 #### 2. Test Function:
 <pre>
-The test(i, j, k) function runs a specific test by calling test_text_generation.main(),\
-which appears to generate some text based on the given test case (test_cases.test_case[i][j][k]).\
-The output of this generation is compared with the expected answer (test_cases.test_case[i][j][k]['answer']).
+test_text_generation.main() generates an output based on the given test case(test_cases.test_case[i][j][k]).
+The output of this generation is compared with the expected answer in logAssert().
 </pre>
 
 #### 3. Assertion Logging:
 <pre>
-The logAssert() function checks whether the test output matches the expected answer (answer_generation).\
-If they don't match, it logs an error message with details about the model, number of devices, and output length,\
-and raises an assertion error to signal test failure. If the test passes, it logs a success message.
+The logAssert() function checks whether the test output matches the expected answer(answer_generation).
+If they don't match, it logs an error message with details about the test and raises an assertion error.
+If the test passes, it logs a success message.
 </pre>
 
 
