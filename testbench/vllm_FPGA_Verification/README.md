@@ -40,12 +40,12 @@ Generates variables for each test case.
 Model name, num of devices, output token length, input prompt, golden answer,...are saved in each test case variable.
 </pre>
 
-#### test_text_generation.py
+#### vllm_test_text_generation.py
 <pre>
 This module generates output according to the given test case.
 Code is based on 
 
-This module needs:
+This module needs: vllm
   
   
 </pre>
