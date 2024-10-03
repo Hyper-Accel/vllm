@@ -43,9 +43,9 @@ Model name, num of devices, output token length, input prompt, golden answer,...
 #### vllm_test_text_generation.py
 <pre>
 This module generates output according to the given test case.
-Code is based on 
+Code is based on /vllm/examples/lpu_inference.py
 
-This module needs: vllm
+This module needs: /vllm
   
   
 </pre>
