@@ -46,8 +46,7 @@ This module generates output according to the given test case.
 Code is based on /vllm/examples/lpu_inference.py
 
 This module needs: /vllm
-  
-  
+
 </pre>
 
 #### fpga_verification.py
@@ -55,8 +54,8 @@ This module needs: /vllm
 This module compares expected answer and generated output. Logs will be save in ./logs
   
   How to run verification:
-  pytest fpga_verification.py                          # prints full info
-  pytest fpga_verification.py --tb=no -v               # prints only the summary info
-  pytest fpga_verification.py --tb=short               # prints info
-  pytest fpga_verification.py --tb=short -k 'test_1'   # select tests
+  pytest vllm_fpga_verification.py                          # prints full info
+  pytest vllm_fpga_verification.py --tb=no -v               # prints only the summary info
+  pytest vllm_fpga_verification.py --tb=short               # prints info
+  pytest vllm_fpga_verification.py --tb=short -k 'test_1'   # select tests
 </pre>
