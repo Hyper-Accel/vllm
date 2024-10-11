@@ -11,8 +11,18 @@ try:
     # While it's technically possible to install liblpu on a non-LPU machine,
     # this is a very uncommon scenario. Therefore, we assume that liblpu is
     # installed if and only if the machine has LPUs.
-    import liblpu  # noqa: F401
+    import hyperdex  # noqa: F401
     is_lpu = True
+except Exception:
+    pass
+
+is_tpu = False
+try:
+    # While it's technically possible to install liblpu on a non-LPU machine,
+    # this is a very uncommon scenario. Therefore, we assume that liblpu is
+    # installed if and only if the machine has LPUs.
+    import libtpu  # noqa: F401
+    is_tpu = True
 except Exception:
     pass
 
@@ -42,7 +52,28 @@ try:
 except Exception:
     pass
 
-if is_cuda:
+is_xpu = False
+
+try:
+    import torch
+    if hasattr(torch, 'xpu') and torch.xpu.is_available():
+        is_xpu = True
+except Exception:
+    pass
+
+is_cpu = False
+try:
+    from importlib.metadata import version
+    is_cpu = "cpu" in version("vllm")
+except Exception:
+    pass
+
+if is_tpu:
+    # people might install pytorch built with cuda but run on tpu
+    # so we need to check tpu first
+    from .tpu import TpuPlatform
+    current_platform = TpuPlatform()
+elif is_cuda:
     from .cuda import CudaPlatform
     current_platform = CudaPlatform()
 elif is_lpu:
@@ -53,6 +84,12 @@ elif is_lpu:
 elif is_rocm:
     from .rocm import RocmPlatform
     current_platform = RocmPlatform()
+elif is_xpu:
+    from .xpu import XPUPlatform
+    current_platform = XPUPlatform()
+elif is_cpu:
+    from .cpu import CpuPlatform
+    current_platform = CpuPlatform()
 else:
     current_platform = UnspecifiedPlatform()
 

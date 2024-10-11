@@ -5,7 +5,7 @@ from vllm.multimodal.base import MultiModalInputs, NestedTensors
 
 def assert_nested_tensors_equal(expected: NestedTensors,
                                 actual: NestedTensors):
-    assert type(expected) == type(actual)
+    assert type(expected) == type(actual)  # noqa: E721
     if isinstance(expected, torch.Tensor):
         assert torch.equal(expected, actual)
     else:
@@ -81,3 +81,15 @@ def test_multimodal_input_batch_multiple_batchable_lists():
         result,
         {"image": torch.stack([torch.stack([a, b]),
                                torch.stack([c, d])])})
+
+
+def test_multimodal_input_batch_mixed_stacking_depths():
+    a = torch.rand([1, 2, 3])
+    b = torch.rand([1, 3, 3])
+    c = torch.rand([1, 4, 3])
+
+    result = MultiModalInputs.batch([{"image": [a, b]}, {"image": [c]}])
+    assert_multimodal_inputs_equal(result, {"image": [[a, b], c.unsqueeze(0)]})
+
+    result = MultiModalInputs.batch([{"image": [a]}, {"image": [b, c]}])
+    assert_multimodal_inputs_equal(result, {"image": [a.unsqueeze(0), [b, c]]})

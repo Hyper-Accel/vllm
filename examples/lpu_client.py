@@ -27,7 +27,6 @@ def post_http_request(prompt: str,
     pload = {
         "prompt": prompt,
         "n": n,
-        "use_beam_search": False,
         "temperature": 0.8,
         "max_tokens": 40,
         "top_p": 0.95,

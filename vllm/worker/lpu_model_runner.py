@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Callable, Any, Dict, List, Optional, Tuple, Type, Union
 from unittest.mock import patch
 
 import numpy as np
@@ -21,8 +21,9 @@ from vllm.config import (CacheConfig, DeviceConfig, LoadConfig, ModelConfig,
 from vllm.logger import init_logger, print_logger
 from vllm.model_executor.model_loader import get_model
 from vllm.model_executor.sampling_metadata import SamplingMetadata
+from vllm.model_executor.layers.sampler import SamplerOutput
 from vllm.sequence import (CompletionSequenceGroupOutput, IntermediateTensors,
-                           Logprob, SamplerOutput, SequenceGroupMetadata,
+                           Logprob, SequenceGroupMetadata,
                            SequenceOutput)
 from vllm.worker.model_runner_base import (
     ModelRunnerBase, ModelRunnerInputBase,
@@ -344,9 +345,6 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
             stop.append(sampling_params.stop_token_ids)
             max_tokens.append(sampling_params.max_tokens)
             min_tokens.append(sampling_params.min_tokens)
-            if sampling_params.use_beam_search:
-                raise NotImplementedError(
-                    "Beam search is not supported by the LPU backend.")
             if sampling_params.logprobs is not None:
                 raise NotImplementedError(
                     "logprobs is not currently supported by the LPU backend.")
