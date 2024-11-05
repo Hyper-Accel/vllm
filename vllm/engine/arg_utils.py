@@ -907,7 +907,7 @@ class EngineArgs:
             "CPU offload space must be non-negative"
             f", but got {self.cpu_offload_gb}")
 
-        device_config = DeviceConfig(device=self.device)
+        device_config = DeviceConfig(device=self.device, num_gpu_devices=self.num_gpu_devices, num_lpu_devices=self.num_lpu_devices)
         model_config = self.create_model_config()
 
         if model_config.is_multimodal_model:
