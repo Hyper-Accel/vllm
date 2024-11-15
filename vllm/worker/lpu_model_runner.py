@@ -11,7 +11,7 @@ import transformers
 
 # HyperDex package
 from hyperdex.transformers import AutoModelForCausalLM, AutoTokenizer, TextStreamer
-from hyperdex.tools import AutoCompiler
+from hyperdex.tools import HDexCompiler
 from hyperdex.tools._C.mem_map import memory_mapper
 from hyperdex.tools._C.inst_gen import inst_generator
 
@@ -120,8 +120,8 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
 
     def load_model(self, num_gpu_devices = 0, num_lpu_devices = 1) -> None:
         hyperdex_ckpt = os.path.join(MODEL_PATH, self.model_config.model)
-        compiler = AutoCompiler()
-        compiler.compile(hyperdex_ckpt)
+        compiler = HDexCompiler()
+        compiler.compile(hyperdex_ckpt, num_device=1, max_length=4096)
         # NOTE(hyunjun): The number of GPU should be added
         self.model = AutoModelForCausalLM.from_pretrained(hyperdex_ckpt, device_map={"gpu": num_gpu_devices, "lpu": num_lpu_devices})
         self.tokenizer = AutoTokenizer.from_pretrained(hyperdex_ckpt)
