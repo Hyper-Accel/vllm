@@ -3,16 +3,16 @@
 #### File Tree
 <pre>
 .
-├── conftest.py
-├── fpga_verification.py
 ├── logs
 │   ├── verification_log_2024-09-24_19-35-38.log
 │   ├── verification_log_2024-09-24_19-48-06.log
+├── conftest.py
 ├── pytest.ini
-├── test_answer.py
+├── verification.py
 ├── test_cases.py
-├── test_prompt.py
-└── test_text_generation.py
+├── test_prompts.py
+├── golden_output.py
+└── text_generator.py
 </pre>
 #### conftest.py
 <pre>
@@ -21,28 +21,26 @@ Specifies saved log name format.
 
 #### pytest.ini
 <pre>
-Specifies live log format.
+Specifies live log format. (not necessary)
 </pre>
 
-#### test_prompt.py
+#### test_prompts.py
 <pre>
-Input prompts to verfiy:
-  └── short input
-  └── long input
+Input prompts used for testing.
 </pre>
 
-#### test_answer.py
+#### golden_output.py
 <pre>
 Expected answers to each input prompts for output token length of 100, 200, 400, 600, 800, 1000, 1200.
 </pre>
 
-#### cases_answer.py
+#### test_cases.py
 <pre>
-Generates variables for each test case.
+Defines test cases.
 Model name, num of devices, output token length, input prompt, golden answer,...are saved in each test case variable.
 </pre>
 
-#### test_text_generation.py
+#### text_generator.py
 <pre>
 This module generates output according to the given test case.
 Code is based on /HyperDexPython/examples/applications/text_generation.py
@@ -52,13 +50,17 @@ This module needs:
   
 </pre>
 
-#### fpga_verification.py
+#### verification.py
 <pre>
 This module compares expected answer and generated output. Logs will be save in ./logs
   
-  How to run verification:
-  pytest fpga_verification.py                          # prints full info
-  pytest fpga_verification.py --tb=no -v               # prints only the summary info
-  pytest fpga_verification.py --tb=short               # prints info
-  pytest fpga_verification.py --tb=short -k 'test_1'   # select tests
+## Required commands:
+# pip install -U pytest
+
+## How to run verification:
+# pytest verification.py                                # prints full info
+# pytest verification.py --tb=no -v                     # prints only the summary info
+# pytest verification.py --tb=short                     # prints info
+# pytest verification.py --tb=short -k 'test_1'         # select tests
+# pytest verification.py --tb=no -v --show-capture=no
 </pre>
