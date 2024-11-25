@@ -95,14 +95,14 @@ def logAssert(test_generation, answer_generation, test_num, gen_time):
 
 #### 1. Parametrized Testing:
 <pre>
-The @pytest.mark.parametrize decorator creates a range of test cases based on all combinations of i, j, and k.
-You may add more combinations in test_cases.py
+The @pytest.mark.parametrize decorator allows Pytesting on more than one test cases.
+You may add more test cases in test_cases.py.
 </pre>
 
 #### 2. Test Function:
 <pre>
-text_generator.py generates an output based on the given test case(test_cases.test_case[i][j][k]).
-The output of this generation is compared with the expected answer in logAssert().
+text_generator.py generates an output based on the given test case(test_cases.test_case[test_num]).
+The output of this generation is compared with the expected answer(golden answer) in logAssert().
 </pre>
 
 #### 3. Assertion Logging:
