@@ -44,10 +44,9 @@ Model name, num of devices, output token length, input prompt, golden answer,...
 <pre>
 This module generates output according to the given test case.
 Code is based on /vllm/examples/lpu_client.py and /vllm/examples/lpu_inference.py
+This file opens a server and closes it according to the test case.
 (TO DO) Seed is fixed to 7777
-
-This module needs:
-  /HyperDex-Python/hyperdex/transformers
+This module needs: /vllm
 </pre>
 
 #### verification.py
