@@ -1,4 +1,4 @@
-## 3. vLLM API FPGA Verification
+## 3. vLLM API Verification
 
 #### File Tree
 <pre>
