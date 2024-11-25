@@ -1,4 +1,4 @@
-## 1. Hugging Face FPGA Verification
+## 1. HuggingFace Verification
 
 #### File Tree
 <pre>
