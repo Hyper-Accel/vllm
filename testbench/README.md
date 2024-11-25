@@ -65,7 +65,7 @@ def logAssert(test_generation, answer_generation, test_num, gen_time):
                       + f"[Temperature: {test_cases.test_case[test_num]['temperature']}], \n" \
                       + f"[Repetition_penalty: {test_cases.test_case[test_num]['repetition_penalty']}] \n" \
                       + f"** Expected **: \n{answer_generation} \n** But got **: \n{test_generation}\n")
-        #Live console output when failed
+        #Live console output when failed (also necessary for summarization logging)
         assert test, (f"\nFAIL: {gen_time:.5f} seconds. \n" \
                       + f"[Model: {test_cases.test_case[test_num]['model_name']}], \n" \
                       + f"[# of LPUs: {test_cases.test_case[test_num]['num_of_LPU']}], \n" \
@@ -101,7 +101,7 @@ You may add more combinations in test_cases.py
 
 #### 2. Test Function:
 <pre>
-test_text_generation.main() generates an output based on the given test case(test_cases.test_case[i][j][k]).
+text_generator.py generates an output based on the given test case(test_cases.test_case[i][j][k]).
 The output of this generation is compared with the expected answer in logAssert().
 </pre>
 
