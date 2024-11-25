@@ -45,28 +45,52 @@ FAILED test_simple_calculator.py::test_add - assert 0 == 2
 
 ### fpga_verification.py code
 ```bash
-def logAssert(test_generation, answer_generation, test_param):
+def logAssert(test_generation, answer_generation, test_num, gen_time):
+
+    # Check Time Out
+    if(gen_time > 20):
+        logging.error(f"\nTime Out!: {gen_time:.5f} seconds.\n")
+
     test = (test_generation == answer_generation)
     if (not test):
-        logging.error(f"[Model: {test_cases.model[test_param[0]]}], " \
-                      + f"[# of devices: {test_cases.num_of_devices[test_param[1]]}], " \
-                      + f"[Output length: {test_cases.output_len[test_param[2]]}]: \n" \
+        #Log output when failed
+        logging.error(f"\nFAIL: {gen_time:.5f} seconds. \n" \
+                      + f"[Model: {test_cases.test_case[test_num]['model_name']}], \n" \
+                      + f"[# of LPUs: {test_cases.test_case[test_num]['num_of_LPU']}], \n" \
+                      + f"[# of GPUs: {test_cases.test_case[test_num]['num_of_GPU']}], \n" \
+                      + f"[Output length: {test_cases.test_case[test_num]['output_len']}], \n" \
+                      + f"[Do Sample: {test_cases.test_case[test_num]['do_sample']}], \n" \
+                      + f"[Top_p: {test_cases.test_case[test_num]['top_p']}], \n" \
+                      + f"[Top_k: {test_cases.test_case[test_num]['top_k']}], \n" \
+                      + f"[Temperature: {test_cases.test_case[test_num]['temperature']}], \n" \
+                      + f"[Repetition_penalty: {test_cases.test_case[test_num]['repetition_penalty']}] \n" \
                       + f"** Expected **: \n{answer_generation} \n** But got **: \n{test_generation}\n")
-
-        assert test, (f"[Model: {test_cases.model[test_param[0]]}], " \
-                      + f"[# of devices: {test_cases.num_of_devices[test_param[1]]}], " \
-                      + f"[Output length: {test_cases.output_len[test_param[2]]}]: \n" \
+        #Live console output when failed
+        assert test, (f"\nFAIL: {gen_time:.5f} seconds. \n" \
+                      + f"[Model: {test_cases.test_case[test_num]['model_name']}], \n" \
+                      + f"[# of LPUs: {test_cases.test_case[test_num]['num_of_LPU']}], \n" \
+                      + f"[# of GPUs: {test_cases.test_case[test_num]['num_of_GPU']}], \n" \
+                      + f"[Output length: {test_cases.test_case[test_num]['output_len']}], \n" \
+                      + f"[Do Sample: {test_cases.test_case[test_num]['do_sample']}], \n" \
+                      + f"[Top_p: {test_cases.test_case[test_num]['top_p']}], \n" \
+                      + f"[Top_k: {test_cases.test_case[test_num]['top_k']}], \n" \
+                      + f"[Temperature: {test_cases.test_case[test_num]['temperature']}], \n" \
+                      + f"[Repetition_penalty: {test_cases.test_case[test_num]['repetition_penalty']}] \n" \
                       + f"** Expected **: \n{answer_generation} \n** But got **: \n{test_generation}\n")
 
     else:
-        logging.info(f"[Model: {test_cases.model[test_param[0]]}], [# of devices: {test_cases.num_of_devices[test_param[1]]}], [Output length: {test_cases.output_len[test_param[2]]}]: \nSuccess!!!\n")
-
-
-@pytest.mark.parametrize("i,j,k", [(i,j,k) for i in range(len(test_cases.model)) for j in range(len(test_cases.num_of_devices)) for k in range(len(test_cases.output_len))])
-def test(i,j,k):
-    test_generation = test_text_generation.main(test_cases.test_case[i][j][k])
-    answer_generation = test_cases.test_case[i][j][k]['answer']
-    logAssert(test_generation, answer_generation, [i,j,k])
+        #Log output when passed
+        logging.info(f"\nPASS: {gen_time:.5f} seconds. \n" \
+                      + f"[Model: {test_cases.test_case[test_num]['model_name']}], \n" \
+                      + f"[# of LPUs: {test_cases.test_case[test_num]['num_of_LPU']}], \n" \
+                      + f"[# of GPUs: {test_cases.test_case[test_num]['num_of_GPU']}], \n" \
+                      + f"[Output length: {test_cases.test_case[test_num]['output_len']}], \n" \
+                      + f"[Do Sample: {test_cases.test_case[test_num]['do_sample']}], \n" \
+                      + f"[Top_p: {test_cases.test_case[test_num]['top_p']}], \n" \
+                      + f"[Top_k: {test_cases.test_case[test_num]['top_k']}], \n" \
+                      + f"[Temperature: {test_cases.test_case[test_num]['temperature']}], \n" \
+                      + f"[Repetition_penalty: {test_cases.test_case[test_num]['repetition_penalty']}] \n" \
+                      + f"Pass!!!\n")
 ```
 
 #### 1. Parametrized Testing:
