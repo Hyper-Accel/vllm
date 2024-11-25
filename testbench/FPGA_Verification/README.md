@@ -47,7 +47,6 @@ Code is based on /HyperDexPython/examples/applications/text_generation.py
 
 This module needs:
   /HyperDex-Python/hyperdex/transformers
-  
 </pre>
 
 #### verification.py
