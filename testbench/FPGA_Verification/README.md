@@ -31,7 +31,7 @@ Input prompts used for testing.
 
 #### golden_output.py
 <pre>
-Expected answers to each input prompts for output token length of 100, 200, 400, 600, 800, 1000, 1200.
+Expected answers to each test cases.
 </pre>
 
 #### test_cases.py
