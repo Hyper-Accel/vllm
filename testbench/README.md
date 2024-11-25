@@ -114,7 +114,6 @@ If the test passes, it logs a success message.
 </pre>
 
 #### 4. Test Case Compositions:
-<pre>
 '''
 test_case.insert(0,{
     'model_name'          :   model[0]                          ,
@@ -129,7 +128,7 @@ test_case.insert(0,{
     'Golden Output'       :   golden_output.test_case[0]        
 })
 '''
-</pre>
+
 
 
 
