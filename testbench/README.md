@@ -113,6 +113,26 @@ If they don't match, it logs an error message with details about the test and ra
 If the test passes, it logs a success message.
 </pre>
 
+#### 4. Test Case Compositions:
+<pre>
+'''
+test_case.insert(0,{
+    'model_name'          :   model[0]                          ,
+    'num_of_LPU'          :   num_of_LPU[0]                     , 
+    'num_of_GPU'          :   num_of_GPU[0]                     , 
+    'output_len'          :   output_len[0]                     ,
+    'top_p'               :   ttt[0][0]                         ,
+    'top_k'               :   ttt[0][1]                         ,
+    'temperature'         :   ttt[0][2]                         ,
+    'repetition_penalty'  :   repetition_penalty[0]             ,
+    'Input Prompt'        :   test_prompts.prompt[0]            ,
+    'Golden Output'       :   golden_output.test_case[0]        
+})
+'''
+</pre>
+
+
+
 
 
 
