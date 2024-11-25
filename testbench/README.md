@@ -114,7 +114,7 @@ If they don't match, it logs an error message with details about the test and ra
 If the test passes, it logs a success message.
 </pre>
 
-#### 4. Test Case Compositions:
+#### 4. Test Case Parameters:
 ```bash
 test_case.insert(0,{
     'model_name'          :   model[0]                          ,
