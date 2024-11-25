@@ -44,6 +44,7 @@ Model name, num of devices, output token length, input prompt, golden answer,...
 <pre>
 This module generates output according to the given test case.
 Code is based on /HyperDexPython/examples/applications/text_generation.py
+Seed is fixed to 7777
 
 This module needs:
   /HyperDex-Python/hyperdex/transformers
