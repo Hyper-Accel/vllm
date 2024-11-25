@@ -43,7 +43,7 @@ FAILED test_simple_calculator.py::test_add - assert 0 == 2
 </pre>
 
 
-### fpga_verification.py code
+### verification.py code
 ```bash
 def logAssert(test_generation, answer_generation, test_num, gen_time):
 
