@@ -1,4 +1,4 @@
-## 2. vLLM FPGA Verification
+## 2. vLLM Verification
 
 #### File Tree
 <pre>
