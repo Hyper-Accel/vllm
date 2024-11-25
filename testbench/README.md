@@ -114,7 +114,7 @@ If the test passes, it logs a success message.
 </pre>
 
 #### 4. Test Case Compositions:
-'''
+```bash
 test_case.insert(0,{
     'model_name'          :   model[0]                          ,
     'num_of_LPU'          :   num_of_LPU[0]                     , 
@@ -127,7 +127,7 @@ test_case.insert(0,{
     'Input Prompt'        :   test_prompts.prompt[0]            ,
     'Golden Output'       :   golden_output.test_case[0]        
 })
-'''
+```
 
 
 
