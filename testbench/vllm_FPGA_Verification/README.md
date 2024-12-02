@@ -16,7 +16,7 @@
 </pre>
 #### conftest.py
 <pre>
-Specifies saved log name format.
+Specifies log file name format.
 </pre>
 
 #### pytest.ini
