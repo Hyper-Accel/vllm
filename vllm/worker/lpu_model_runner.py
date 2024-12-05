@@ -121,7 +121,7 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
     def load_model(self, num_gpu_devices = 0, num_lpu_devices = 1) -> None:
         hyperdex_ckpt = os.path.join(MODEL_PATH, self.model_config.model)
         compiler = AutoCompiler()
-        compiler.compile(hyperdex_ckpt, num_device=1, max_length=4096)
+        compiler.compile(hyperdex_ckpt, num_device=num_lpu_devices, max_length=4096)
         # NOTE(hyunjun): The number of GPU should be added
         self.model = AutoModelForCausalLM.from_pretrained(hyperdex_ckpt, device_map={"gpu": num_gpu_devices, "lpu": num_lpu_devices})
         self.tokenizer = AutoTokenizer.from_pretrained(hyperdex_ckpt)

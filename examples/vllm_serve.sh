@@ -1,2 +1,2 @@
 
-python -m vllm.entrypoints.api_server --model huggyllama/llama-7b --device fpga --num-gpu-devices 0 --num-lpu-devices 2
+python -m vllm.entrypoints.api_server --model facebook/opt-1.3b --device fpga --num-gpu-devices 0 --num-lpu-devices 1
