@@ -18,6 +18,9 @@ prompt="Hello, my name is"
 completion = client.completions.create(
     model=model,
     prompt=prompt,
+    frequency_penalty=1.2,
+    temperature=1.0,
+    top_p=0.8,
     stream=stream,
     )
 
@@ -25,7 +28,7 @@ print("Prompt:", prompt)
 print("Completion results:")
 if stream:
     for c in completion:
-        print(c.choices[0].text, end="")
+        print(c.choices[0].text, end="", flush=True)
     print()
 else:
     print(completion)
