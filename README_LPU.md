@@ -14,7 +14,7 @@ pip install -i https://pypi.hyperaccel.ai/simple vllm==0.6.1+cpu
 # hyperdex-vllm repo 다운로드 후 example code 실행
 conda install -c conda-forge gcc=12.1.0
 pip install setuptools_scm
-git clone [git@github.com](mailto:git@github.com):Hyper-Accel/vllm.git
+git clone git@github.com:Hyper-Accel/vllm.git
 git checkout feature/lpu-backend
 python lpu_inference.py
 ```
