@@ -20,7 +20,7 @@ python lpu_inference.py
 ```
 
 
-## How to install vllm-orion in LPU server
+## How to install vllm-orion in LPU-GPU hybrid server
 
 ```bash
 # 가상환경 새로 생성
