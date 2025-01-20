@@ -329,7 +329,15 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
                 self.model_execution = True
 
             # NOTE(hyunjun): To execute vllm serve, hyperdex/transformers/backend/lpu/transformers should be modified (streamer.end)
-            next_token_id = next(self.output_token_ids)[0]
+            try:
+                next_token_id = next(self.output_token_ids)[0]
+            except StopIteration:
+                # 제너레이터가 종료되면 모델 실행 상태를 리셋
+                self.model_execution = False
+                self.iteration = 0
+                # 마지막 토큰 처리를 위한 적절한 값 반환
+                next_token_id = self.tokenizer.eos_token_id
+
             self.iteration = self.iteration + 1
             if (model_input.max_tokens[0]) == self.iteration:
                 self.model_execution = False
