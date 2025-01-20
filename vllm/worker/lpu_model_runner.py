@@ -332,10 +332,10 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
             try:
                 next_token_id = next(self.output_token_ids)[0]
             except StopIteration:
-                # 제너레이터가 종료되면 모델 실행 상태를 리셋
+                # When the generator is finished, reset the model execution state
                 self.model_execution = False
                 self.iteration = 0
-                # 마지막 토큰 처리를 위한 적절한 값 반환
+                # Return the appropriate value for the last token
                 next_token_id = self.tokenizer.eos_token_id
 
             self.iteration = self.iteration + 1
