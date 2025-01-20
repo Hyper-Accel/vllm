@@ -61,9 +61,9 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
             cache_config,
             load_config,
             is_driver_worker=is_driver_worker)
-    
+
     def cleanup(self):
-      self.model_runner.cleanup()
+        self.model_runner.cleanup()
 
     def init_device(self) -> None:
         self.device = torch.device("fpga")
@@ -79,7 +79,7 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         ensure_model_parallel_initialized(
             self.parallel_config.tensor_parallel_size,
             self.parallel_config.pipeline_parallel_size)
- 
+
         # Set random seed.
         set_random_seed(self.model_config.seed)
 
@@ -88,7 +88,7 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
 
     # LPU does not support this function
     def determine_num_available_blocks(self) -> Tuple[int, int]:
-        return 1, 0 
+        return 1, 0
 
     # LPU does not support this function
     def initialize_cache(
@@ -96,15 +96,15 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         num_gpu_blocks: int,
         num_cpu_blocks: int,
     ) -> None:
-        pass 
+        pass
 
     # LPU does not support this function
     def _warmup_model(self) -> None:
-        pass 
+        pass
 
     # LPU does not support this function
     def get_cache_block_size_bytes(self) -> int:
-        pass 
+        pass
         return 1024
 
     @property
@@ -114,7 +114,7 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
     # LPU does not support this function
     @property
     def kv_cache(self) -> Optional[List[List[torch.Tensor]]]:
-        return None 
+        return None
 
     # LPU does not support this function
     def prepare_worker_input(
@@ -127,7 +127,7 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         blocks_to_swap_in = _make_src_to_dst(
             execute_model_req.blocks_to_swap_in, "cpu", "cpu")
         blocks_to_swap_out = _make_src_to_dst(
-            execute_model_req.blocks_to_swap_out, "cpu", "cpu") 
+            execute_model_req.blocks_to_swap_out, "cpu", "cpu")
         blocks_to_copy = _make_src_to_dst(execute_model_req.blocks_to_copy,
                                           "cpu", "cpu")
         return WorkerInput(
@@ -140,7 +140,7 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
 
     # LPU does not support this function
     def execute_worker(self, worker_input: WorkerInput) -> None:
-      pass
+        pass
 
 
 def _make_src_to_dst(
@@ -157,5 +157,3 @@ def _make_src_to_dst(
                                device=dst_device,
                                dtype=torch.int64)
     return src_indices, dst_indices
-
-

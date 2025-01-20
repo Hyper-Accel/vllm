@@ -352,6 +352,7 @@ def get_nvcc_cuda_version() -> Version:
 def get_path(*filepath) -> str:
     return os.path.join(ROOT_DIR, *filepath)
 
+
 def find_version(filepath: str) -> str:
     """Extract version information from the given filepath.
 
@@ -363,6 +364,7 @@ def find_version(filepath: str) -> str:
         if version_match:
             return version_match.group(1)
         raise RuntimeError("Unable to find version string.")
+
 
 def get_vllm_version() -> str:
     version = find_version(get_path("vllm", "version.py"))
@@ -443,6 +445,7 @@ def get_vllm_version() -> str:
 
     return version
 '''
+
 
 def read_readme() -> str:
     """Read the README file if present."""
