@@ -88,7 +88,10 @@ class LPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
 
     # LPU does not support this function
     def determine_num_available_blocks(self) -> Tuple[int, int]:
-        return 1, 0
+        # block size는 모델 전체 kv cache를 저장하는 양
+        num_lpu_blocks = (self.model_config.max_model_len // self.cache_config.block_size) + 1
+        logger.info(f"num_lpu_blocks: {num_lpu_blocks}")
+        return num_lpu_blocks, 0
 
     # LPU does not support this function
     def initialize_cache(
