@@ -20,7 +20,7 @@ parser.add_argument("-g",
                     help="the number of the GPU")
 parser.add_argument("-i",
                     "--i_token",
-                    default="Hello, my name is",
+                    default="Act like an experienced HR Manager. Develop a human resources strategy for retaining top talents in a competitive industry. Industry: (e.g Energy( Workforce: (e,g 550) Style: (e.g Formal) Tone: (e.g Convincing)",
                     type=str,
                     help="input prompt")
 parser.add_argument("-o",

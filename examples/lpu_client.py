@@ -62,7 +62,7 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--n", type=int, default=1)
     #parser.add_argument("--prompt", type=str, default="1 2 3 4 5")
-    parser.add_argument("--prompt", type=str, default="Hello, my name is")
+    parser.add_argument("--prompt", type=str, default="Act like an experienced HR Manager. Develop a human resources strategy for retaining top talents in a competitive industry. Industry: (e.g Energy( Workforce: (e,g 550) Style: (e.g Formal) Tone: (e.g Convincing)")
     parser.add_argument("--stream", action="store_true")
     args = parser.parse_args()
     prompt = args.prompt
