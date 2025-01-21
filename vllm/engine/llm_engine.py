@@ -1464,8 +1464,8 @@ class LLMEngine:
             # queued control plane messages, such as add/remove lora adapters.
             logger.debug("Stopping remote worker execution loop.")
             self.model_executor.stop_remote_worker_execution_loop()
-            if self.device_config.device_type == "fpga":
-                self.model_executor.cleanup()
+            # if self.device_config.device_type == "fpga":
+            #     self.model_executor.cleanup()
 
         return ctx.request_outputs
 
