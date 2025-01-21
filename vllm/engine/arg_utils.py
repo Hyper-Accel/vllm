@@ -809,16 +809,14 @@ class EngineArgs:
             default=EngineArgs.disable_async_output_proc,
             help="Disable async output processing. This may result in "
             "lower performance.")
-        parser.add_argument(
-            '--num-gpu-devices',
-            type=int,
-            default=0,
-            help='the number of gpu devices for hybrid system')
-        parser.add_argument(
-            '--num-lpu-devices',
-            type=int,
-            default=1,
-            help='the number of lpu devices for hybrid system')
+        parser.add_argument('--num-gpu-devices',
+                            type=int,
+                            default=0,
+                            help='the number of gpu devices for hybrid system')
+        parser.add_argument('--num-lpu-devices',
+                            type=int,
+                            default=1,
+                            help='the number of lpu devices for hybrid system')
         parser.add_argument(
             '--override-neuron-config',
             type=json.loads,
@@ -907,7 +905,9 @@ class EngineArgs:
             "CPU offload space must be non-negative"
             f", but got {self.cpu_offload_gb}")
 
-        device_config = DeviceConfig(device=self.device, num_gpu_devices=self.num_gpu_devices, num_lpu_devices=self.num_lpu_devices)
+        device_config = DeviceConfig(device=self.device,
+                                     num_gpu_devices=self.num_gpu_devices,
+                                     num_lpu_devices=self.num_lpu_devices)
         model_config = self.create_model_config()
 
         if model_config.is_multimodal_model:

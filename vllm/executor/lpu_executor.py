@@ -19,7 +19,7 @@ class LPUExecutor(ExecutorBase):
 
     uses_ray: bool = False
 
-    def _init_executor(self) -> None: #HJ: why not __init__ ?
+    def _init_executor(self) -> None:  #HJ: why not __init__ ?
         assert not self.scheduler_config.chunked_prefill_enabled, (
             "Chunked prefill is not yet supported for LPU backend")
         assert not self.speculative_config, (
@@ -34,7 +34,8 @@ class LPUExecutor(ExecutorBase):
         # NOTE(hyunjun): vLLM does not use torch distributed library to execute multi-LPU
         self.driver_worker = self._create_worker()
         self.driver_worker.init_device()
-        self.driver_worker.load_model(self.device_config.num_gpu_devices, self.device_config.num_lpu_devices)
+        self.driver_worker.load_model(self.device_config.num_gpu_devices,
+                                      self.device_config.num_lpu_devices)
 
     def _get_worker_kwargs(
         self,
@@ -56,7 +57,7 @@ class LPUExecutor(ExecutorBase):
             local_rank=local_rank,
             rank=rank,
             distributed_init_method=distributed_init_method,
-#            multimodal_config=self.multimodal_config,
+            #            multimodal_config=self.multimodal_config,
             is_driver_worker=rank == 0,
         )
 
@@ -72,7 +73,7 @@ class LPUExecutor(ExecutorBase):
                                                      distributed_init_method))
         return worker
 
-    def initialize_cache( 
+    def initialize_cache(
         self,
         num_gpu_blocks: int,
         num_cpu_blocks: int,
@@ -85,13 +86,14 @@ class LPUExecutor(ExecutorBase):
                     num_cpu_blocks)
         self.driver_worker.initialize_cache(num_gpu_blocks, num_cpu_blocks)
 
-    def determine_num_available_blocks(self) -> Tuple[int, int]: #HJ: should we use block?
+    def determine_num_available_blocks(
+            self) -> Tuple[int, int]:  #HJ: should we use block?
         """Determine the number of available KV blocks by invoking the
         underlying worker."""
         return self.driver_worker.determine_num_available_blocks()
 
     def cleanup(self):
-      self.driver_worker.cleanup()
+        self.driver_worker.cleanup()
 
     def execute_model(
         self,

@@ -1059,7 +1059,10 @@ class DeviceConfig:
     num_gpu_devices: int
     num_lpu_devices: int
 
-    def __init__(self, device: str = "auto", num_gpu_devices: int = 0, num_lpu_devices: int = 1) -> None:
+    def __init__(self,
+                 device: str = "auto",
+                 num_gpu_devices: int = 0,
+                 num_lpu_devices: int = 1) -> None:
         if device == "auto":
             # Automated device type detection
             if current_platform.is_cuda_alike():
@@ -1091,8 +1094,9 @@ class DeviceConfig:
             # Set device with device type
             self.device = torch.device(self.device_type)
 
-        self.num_gpu_devices=num_gpu_devices
-        self.num_lpu_devices=num_lpu_devices
+        self.num_gpu_devices = num_gpu_devices
+        self.num_lpu_devices = num_lpu_devices
+
 
 class SpeculativeConfig:
     """Configuration for speculative decoding.

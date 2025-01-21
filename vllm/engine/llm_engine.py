@@ -524,8 +524,9 @@ class LLMEngine:
                 executor_class = TPUExecutor
         elif engine_config.device_config.device_type == "fpga":
             if engine_config.device_config.num_lpu_devices == 0:
-              raise NotImplementedError(
-                  "fpga device type should select num_lpu_devices larger than 1")
+                raise NotImplementedError(
+                    "fpga device type should select num_lpu_devices larger than 1"
+                )
             from vllm.executor.lpu_executor import LPUExecutor
             executor_class = LPUExecutor
         elif engine_config.device_config.device_type == "cpu":

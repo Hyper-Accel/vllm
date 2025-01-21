@@ -23,8 +23,7 @@ from vllm.model_executor.model_loader import get_model
 from vllm.model_executor.sampling_metadata import SamplingMetadata
 from vllm.model_executor.layers.sampler import SamplerOutput
 from vllm.sequence import (CompletionSequenceGroupOutput, IntermediateTensors,
-                           Logprob, SequenceGroupMetadata,
-                           SequenceOutput)
+                           Logprob, SequenceGroupMetadata, SequenceOutput)
 from vllm.worker.model_runner_base import (
     ModelRunnerBase, ModelRunnerInputBase,
     _add_attn_metadata_broadcastable_dict,
@@ -48,11 +47,12 @@ _MAX_NUM_SAMPLES = 128
 MODEL_PATH = "/opt/hyperdex/models"
 COMPILER_PATH = "/opt/hyperdex/compiler/lib"
 
+
 @dataclass(frozen=True)
 class ModelInputForLPU(ModelRunnerInputBase):
     # NOTE (hyunjun): sampling param variables are list type to support batching later
     token_ids: torch.Tensor
-    position_ids: torch.Tensor 
+    position_ids: torch.Tensor
     input_lens: torch.Tensor
     t: List[int]
     p: List[int]
@@ -117,22 +117,32 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
         self.output_token_ids_buffer = []
         self.iteration = 0
 
-
-    def load_model(self, num_gpu_devices = 0, num_lpu_devices = 1) -> None:
+    def load_model(self, num_gpu_devices=0, num_lpu_devices=1) -> None:
         hyperdex_ckpt = os.path.join(MODEL_PATH, self.model_config.model)
         compiler = AutoCompiler()
-        compiler.compile(hyperdex_ckpt, num_device=num_lpu_devices, max_length=4096)
+        compiler.compile(hyperdex_ckpt,
+                         num_device=num_lpu_devices,
+                         max_length=4096)
         # NOTE(hyunjun): The number of GPU should be added
-        self.model = AutoModelForCausalLM.from_pretrained(hyperdex_ckpt, device_map={"gpu": num_gpu_devices, "lpu": num_lpu_devices})
+        self.model = AutoModelForCausalLM.from_pretrained(hyperdex_ckpt,
+                                                          device_map={
+                                                              "gpu":
+                                                              num_gpu_devices,
+                                                              "lpu":
+                                                              num_lpu_devices
+                                                          })
         self.tokenizer = AutoTokenizer.from_pretrained(hyperdex_ckpt)
-        self.streamer = TextStreamer(self.tokenizer, use_print=False, use_sse=True, skip_special_tokens=True)
+        self.streamer = TextStreamer(self.tokenizer,
+                                     use_print=False,
+                                     use_sse=True,
+                                     skip_special_tokens=True)
         self.output_token_ids = None
 
     def cleanup(self):
-      del self.model
-      del self.tokenizer
-      del self.streamer
-      del self.output_token_ids
+        del self.model
+        del self.tokenizer
+        del self.streamer
+        del self.output_token_ids
 
     def _prepare_prompt(
         self,
@@ -175,7 +185,7 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
         prompt_lens = torch.tensor(prompt_lens,
                                    dtype=torch.int32,
                                    device="cpu")
-        return input_tokens, input_positions, prompt_lens 
+        return input_tokens, input_positions, prompt_lens
 
     def _prepare_decode(
         self,
@@ -199,8 +209,8 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
                 position = seq_len - 1
                 input_positions.append([position])
 
-        batch_size = batch_idx 
-        # NOTE(hyunjun): Currently, LPU cannot support batching. So there is no padding 
+        batch_size = batch_idx
+        # NOTE(hyunjun): Currently, LPU cannot support batching. So there is no padding
         num_paddings = batch_size - batch_idx
         input_tokens = input_tokens + [[0]] * num_paddings
         input_positions = input_positions + [[0]] * num_paddings
@@ -214,13 +224,14 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
         input_lens = torch.tensor([1] * batch_size,
                                   dtype=torch.int32,
                                   device="cpu")
-        return input_tokens, input_positions, input_lens 
+        return input_tokens, input_positions, input_lens
 
     def _prepare_sample(
         self,
         seq_group_metadata_list: List[SequenceGroupMetadata],
-    ) -> Tuple[List[int], List[int], List[int], List[int], List[int], List[int]]:
-        assert len(seq_group_metadata_list) > 0 
+    ) -> Tuple[List[int], List[int], List[int], List[int], List[int],
+               List[int]]:
+        assert len(seq_group_metadata_list) > 0
         t = []
         p = []
         k = []
@@ -264,19 +275,21 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
         else:
             inputs = self._prepare_decode(seq_group_metadata_list)
         input_tokens, input_positions, input_lens = inputs
-        t, p, k, r, stop, max_tokens, min_tokens = self._prepare_sample(seq_group_metadata_list)
+        t, p, k, r, stop, max_tokens, min_tokens = self._prepare_sample(
+            seq_group_metadata_list)
 
         seq_groups = [
             list(metadata.seq_data.keys())
             for metadata in seq_group_metadata_list
         ]
-        return ModelInputForLPU(input_tokens, input_positions, input_lens,
-                                t, p, k, r, stop, max_tokens, min_tokens, seq_groups)
+        return ModelInputForLPU(input_tokens, input_positions, input_lens, t,
+                                p, k, r, stop, max_tokens, min_tokens,
+                                seq_groups)
 
     def make_model_input_from_broadcasted_tensor_dict(
             self, tensor_dict: Dict[str, Any]) -> ModelInputForLPU:
         model_input = ModelInputForLPU.from_broadcasted_tensor_dict(
-            tensor_dict) 
+            tensor_dict)
         return model_input
 
     @torch.no_grad()
@@ -300,29 +313,36 @@ class LPUModelRunner(ModelRunnerBase[ModelInputForLPU]):
         else:
             # Execute the model.
             if self.model_execution == False:
-              # NOTE(hyunjun): Currently len(model_input.token_ids) is zero because LPU does not support batch
-              for i in range(len(model_input.token_ids)):
-               self.output_token_ids = self.model.generate_yield(
-                model_input.token_ids[i].tolist(),
-                max_new_tokens=model_input.max_tokens[i],
-                do_sample=True,
-                top_p=model_input.p[i],
-                top_k=model_input.k[i],
-                temperature=model_input.t[i],
-                repetition_penalty=model_input.r[i],
-                stop=model_input.stop[i],
-                streamer=self.streamer
-                )
-              # NOTE(hyunjun): LPU will support batching later, but not now
-              self.model_execution = True
-            
+                # NOTE(hyunjun): Currently len(model_input.token_ids) is zero because LPU does not support batch
+                for i in range(len(model_input.token_ids)):
+                    self.output_token_ids = self.model.generate_yield(
+                        model_input.token_ids[i].tolist(),
+                        max_new_tokens=model_input.max_tokens[i],
+                        do_sample=True,
+                        top_p=model_input.p[i],
+                        top_k=model_input.k[i],
+                        temperature=model_input.t[i],
+                        repetition_penalty=model_input.r[i],
+                        stop=model_input.stop[i],
+                        streamer=self.streamer)
+                # NOTE(hyunjun): LPU will support batching later, but not now
+                self.model_execution = True
+
             # NOTE(hyunjun): To execute vllm serve, hyperdex/transformers/backend/lpu/transformers should be modified (streamer.end)
-            next_token_id = next(self.output_token_ids)[0]
+            try:
+                next_token_id = next(self.output_token_ids)[0]
+            except StopIteration:
+                # When the generator is finished, reset the model execution state
+                self.model_execution = False
+                self.iteration = 0
+                # Return the appropriate value for the last token
+                next_token_id = self.tokenizer.eos_token_id
+
             self.iteration = self.iteration + 1
             if (model_input.max_tokens[0]) == self.iteration:
-              self.model_execution = False
-              self.iteration = 0
-   
+                self.model_execution = False
+                self.iteration = 0
+
             # NOTE(woosuk): Minimal code to construct the sampler outputs.
             # The LPU backend does not reuse the sampler, since the LPU backend
             # does not support the advanced sampling parameters such as logprobs.

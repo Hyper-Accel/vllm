@@ -13,8 +13,8 @@ models = client.models.list()
 model = models.data[0].id
 
 # Completion API
-stream=True
-prompt="Hello, my name is"
+stream = True
+prompt = "Hello, my name is"
 completion = client.completions.create(
     model=model,
     prompt=prompt,
@@ -22,7 +22,7 @@ completion = client.completions.create(
     temperature=1.0,
     top_p=0.8,
     stream=stream,
-    )
+)
 
 print("Prompt:", prompt)
 print("Completion results:")
