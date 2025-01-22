@@ -126,7 +126,7 @@ for model_id in "${model_ids[@]}"; do
     echo "*********************************"
     echo "**** Start serving_${model_name}_${num_lpu_device}_${num_gpu_device}"
     echo "*********************************"
-    python -m vllm.entrypoints.openai.api_server --model ${model_id} --device fpga --num-lpu-devices ${num_lpu_device} --num_gpu_devices ${num_gpu_device} &
+    vllm serve ${model_id} --device fpga --num-lpu-devices ${num_lpu_device} --num-gpu-devices ${num_gpu_device} --disable-frontend-multiprocessing &
 
     # Waiting for server with timeout (3 minutes)
     wait_count=0
