@@ -4,6 +4,7 @@ include requirements-cuda.txt
 include requirements-rocm.txt
 include requirements-neuron.txt
 include requirements-cpu.txt
+include requirements-fpga.txt
 include CMakeLists.txt
 
 recursive-include cmake *

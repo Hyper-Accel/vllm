@@ -1,0 +1,6 @@
+# Common dependencies
+-r requirements-common.txt
+
+# Dependencies for ORION server
+# Hyperdex-Transformers >= 0.0.2 # TODO: add this, dependency of HyperDex is not compatible with vllm
+# Hyperdex-Compiler >= 0.0.1 # TODO: add this, dependency of HyperDex is not compatible with vllm

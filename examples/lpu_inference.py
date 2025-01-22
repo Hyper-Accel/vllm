@@ -4,7 +4,7 @@ from vllm import LLM, SamplingParams
 #login(token="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", add_to_git_credential=True)
 
 # Sample prompts.
-prompts = ["Hello, my name is"]
+prompts = ["Act like an experienced HR Manager. Develop a human resources strategy for retaining top talents in a competitive industry. Industry: (e.g Energy( Workforce: (e,g 550) Style: (e.g Formal) Tone: (e.g Convincing)"]
 # Create a sampling params object.
 sampling_params = SamplingParams(temperature=0.8,
                                  top_p=0.8,
